@@ -1,0 +1,1229 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Boli — India's first live auction for D2C brands</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=Noto+Serif+Devanagari:wght@500;600&display=swap"
+    />
+    <link rel="stylesheet" href="hark.css" />
+    <style>
+      /* Boli: a custom dark auction-house skin built on Hark's tokens. */
+      :root,
+      :root[data-theme="dark"],
+      :root[data-theme="light"] {
+        color-scheme: dark;
+        --x-bg: #0b0b0c;
+        --x-bg-2: #121214;
+        --x-ink: #f4f1ea;
+        --x-ink-2: #9b978f;
+        --x-ink-3: #928e87;
+        --x-line: rgb(255 255 255 / 0.08);
+        --x-line-2: rgb(255 255 255 / 0.14);
+        --x-gold-1: #d4af6a;
+        --x-gold-2: #f2d79b;
+        --x-gold: linear-gradient(100deg, var(--x-gold-1), var(--x-gold-2) 55%, var(--x-gold-1));
+        --x-ember: #ff7a1a;
+        --x-serif: "Fraunces", "Playfair Display", Georgia, serif;
+        --x-ui: "Inter", var(--sans);
+        --x-dev: "Noto Serif Devanagari", "Fraunces", serif;
+        --x-glass: #151516;
+        --x-gold-wash: #1b170f;
+        --text-primary: var(--x-ink);
+        --text-secondary: var(--x-ink-2);
+        --fill-primary-on: var(--x-bg);
+        --stroke-secondary: var(--x-line);
+        --stroke-primary: var(--x-line-2);
+        --page-max: 1140px;
+      }
+      body {
+        background: var(--x-bg);
+        color: var(--x-ink);
+        font-family: var(--x-ui);
+        font-size: 15px;
+        line-height: 1.5;
+      }
+      /* film grain */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.4;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+      }
+      .page { position: relative; z-index: 1; padding-block: 0 0; gap: 0; max-width: none; padding-inline: 0; }
+      .main { gap: 0; }
+      :focus-visible { outline: 2px solid var(--x-gold-1); outline-offset: 3px; }
+      ::selection { background: var(--x-gold-1); color: #0b0b0c; }
+
+      .x-wrap { width: min(100% - clamp(20px, 5vw, 56px), var(--page-max)); margin-inline: auto; }
+      .x-num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+      .x-serif { font-family: var(--x-serif); font-weight: 400; letter-spacing: -0.01em; }
+      .x-gold-text { color: #e6c98d; }
+      html, body { overflow-x: clip; }
+      .x-eyebrow {
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--x-ink-2);
+        font-weight: 500;
+      }
+      .x-muted { color: var(--x-ink-2); }
+      .x-fine { font-size: 13px; color: var(--x-ink-3); }
+
+      /* nav */
+      .x-nav {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        background: rgb(11 11 12 / 0.72);
+        -webkit-backdrop-filter: blur(18px) saturate(1.4);
+        backdrop-filter: blur(18px) saturate(1.4);
+        border-bottom: 1px solid var(--x-line);
+      }
+      .x-nav__in { display: flex; align-items: center; gap: 16px; min-height: 64px; }
+      .x-logo { display: flex; align-items: baseline; gap: 8px; text-decoration: none; color: var(--x-ink); margin-right: auto; }
+      .x-logo b { font-family: var(--x-serif); font-weight: 500; font-size: 22px; letter-spacing: 0.01em; }
+      .x-logo span { font-family: var(--x-dev); font-size: 17px; color: var(--x-gold-1); }
+      .x-navlinks { display: flex; gap: 4px; }
+      .x-navlinks a {
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 14px;
+        color: var(--x-ink-2);
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .x-navlinks a:hover, .x-navlinks a[aria-current="true"] { color: var(--x-ink); background: var(--x-glass); }
+      @media (max-width: 860px) {
+        .x-nav__in { flex-wrap: wrap; gap: 0 12px; padding-top: 8px; }
+        .x-navlinks { order: 3; width: 100%; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+        .x-navlinks a:first-child { padding-left: 0; }
+        .x-navlinks a { display: inline-flex; align-items: center; min-height: 44px; }
+        .x-nav__in { min-height: 56px; }
+        .x-sec { scroll-margin-top: 112px; }
+      }
+
+      .x-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 44px;
+        padding: 0 18px;
+        border-radius: 999px;
+        border: 1px solid var(--x-line-2);
+        background: transparent;
+        color: var(--x-ink);
+        font: 500 14px/1 var(--x-ui);
+        text-decoration: none;
+        cursor: pointer;
+        transition: background 160ms var(--ease-out), border-color 160ms var(--ease-out), transform 160ms var(--ease-out);
+      }
+      .x-btn:hover { background: var(--x-glass); border-color: rgb(255 255 255 / 0.26); }
+      .x-btn:active { transform: translateY(1px); }
+      .x-btn--gold {
+        background-color: var(--x-gold-1);
+        background-image: var(--x-gold);
+        border-color: transparent;
+        color: #14110b;
+        font-weight: 600;
+        box-shadow: 0 6px 24px rgb(212 175 106 / 0.18);
+      }
+      .x-btn--gold:hover { background-color: #e0bd79; background-image: linear-gradient(100deg, #e0bd79, #f8e2ae 55%, #e0bd79); border-color: transparent; }
+      .x-btn--sm { min-height: 38px; padding: 0 14px; font-size: 13px; }
+
+      /* ticker */
+      .x-ticker { border-bottom: 1px solid var(--x-line); background: #0e0e0f; overflow: hidden; }
+      .x-ticker__in { display: flex; align-items: center; gap: 0; min-height: 38px; white-space: nowrap; }
+      .x-ticker__tag {
+        flex: none;
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--x-gold-1);
+        border: 1px solid rgb(212 175 106 / 0.4);
+        border-radius: 999px;
+        padding: 3px 10px;
+        margin-right: 16px;
+      }
+      .x-ticker__track { flex: 1 1 auto; min-width: 0; display: flex; gap: 0; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 4%, #000 92%, transparent); }
+      .x-ticker__run { display: flex; flex: none; gap: 28px; padding-right: 28px; animation: x-slide 34s linear infinite; font-size: 13px; color: var(--x-ink-2); }
+      .x-ticker__run i { font-style: normal; color: var(--x-ink); }
+      @keyframes x-slide { to { transform: translateX(-100%); } }
+
+      /* sections */
+      .x-sec { padding-block: clamp(56px, 8vw, 104px); border-top: 1px solid var(--x-line); scroll-margin-top: 64px; }
+      .x-sec--plain { border-top: 0; }
+      .x-head { max-width: 58ch; margin-bottom: clamp(28px, 4vw, 44px); }
+      .x-head h2 { font-family: var(--x-serif); font-weight: 400; font-size: clamp(28px, 4.2vw, 42px); line-height: 1.12; letter-spacing: -0.02em; margin-top: 14px; }
+      .x-head p { margin-top: 14px; color: var(--x-ink-2); font-size: 16px; max-width: 52ch; }
+
+      /* hero */
+      .x-hero { scroll-margin-top: 110px; position: relative; padding-block: clamp(52px, 9vw, 112px) clamp(40px, 6vw, 72px); overflow: hidden; }
+      .x-hero::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: -220px;
+        width: 760px;
+        height: 520px;
+        transform: translateX(-50%);
+        background: radial-gradient(ellipse at center, rgb(212 175 106 / 0.14), transparent 68%);
+        pointer-events: none;
+      }
+      .x-hero__in { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: clamp(32px, 5vw, 64px); align-items: center; }
+      @media (max-width: 900px) { .x-hero__in { grid-template-columns: 1fr; } }
+      .x-hero h1 { font-family: var(--x-serif); font-weight: 400; font-size: clamp(36px, 7vw, 68px); line-height: 1.04; letter-spacing: -0.025em; margin-top: 18px; }
+      .x-hero__sub { margin-top: 20px; font-size: clamp(16px, 1.6vw, 18px); color: var(--x-ink-2); max-width: 46ch; }
+
+      /* countdown */
+      .x-count { margin-top: 34px; }
+      .x-count__label { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--x-ink-3); }
+      .x-count__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 12px; max-width: 460px; }
+      .x-count__cell { border: 1px solid var(--x-line); border-radius: 14px; background: var(--x-glass); padding: 14px 8px; text-align: center; }
+      .x-count__n { font-family: var(--x-serif); font-weight: 500; font-size: clamp(26px, 5vw, 38px); line-height: 1; font-variant-numeric: tabular-nums; display: block; }
+      .x-count__u { display: block; margin-top: 8px; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--x-ink-3); }
+
+      /* forms */
+      .x-form { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 26px; }
+      .x-input, .x-select {
+        flex: 1 1 220px;
+        min-width: 0;
+        min-height: 44px;
+        padding: 0 16px;
+        border-radius: 999px;
+        border: 1px solid var(--x-line-2);
+        background-color: #121213;
+        color: var(--x-ink);
+        font: 400 15px/1 var(--x-ui);
+      }
+      .x-select { -webkit-appearance: none; appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--x-ink-2) 50%), linear-gradient(135deg, var(--x-ink-2) 50%, transparent 50%); background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%; background-size: 6px 6px, 6px 6px; background-repeat: no-repeat; padding-right: 40px; }
+      .x-select option { background: var(--x-bg-2); color: var(--x-ink); }
+      .x-input::placeholder { color: var(--x-ink-3); }
+      .x-input:focus, .x-select:focus { outline: 2px solid var(--x-gold-1); outline-offset: 1px; }
+      .x-err { margin-top: 10px; font-size: 13px; color: #ff8f6b; }
+      .x-ok { border: 1px solid rgb(212 175 106 / 0.35); border-radius: 18px; padding: 20px; background: var(--x-gold-wash); margin-top: 24px; }
+      .x-ok h3 { font-family: var(--x-serif); font-weight: 500; font-size: 20px; }
+      .x-ok p { margin-top: 10px; color: var(--x-ink-2); font-size: 15px; }
+      .x-reflink { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+      .x-reflink code { font-family: "Geist Mono", ui-monospace, monospace; font-size: 13px; color: var(--x-gold-2); border: 1px solid var(--x-line); border-radius: 10px; padding: 10px 14px; background: rgb(0 0 0 / 0.3); overflow-wrap: anywhere; }
+      .x-share { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+
+      /* sealed #1 */
+      .x-sealed {
+        position: relative;
+        border: 1px solid rgb(212 175 106 / 0.28);
+        border-radius: 26px;
+        padding: clamp(24px, 4vw, 40px);
+        background: #121213;
+        overflow: hidden;
+      }
+      .x-sealed::before {
+        content: "";
+        position: absolute;
+        inset: -40% -10%;
+        background: radial-gradient(circle at 70% 30%, rgb(255 122 26 / 0.16), transparent 58%);
+        pointer-events: none;
+      }
+      .x-sealed > * { position: relative; }
+      .x-shimmer::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(105deg, transparent 38%, rgb(242 215 155 / 0.14) 50%, transparent 62%);
+        background-size: 260% 100%;
+        animation: x-shim 6.5s ease-in-out infinite;
+        pointer-events: none;
+      }
+      @keyframes x-shim { 0% { background-position: 160% 0; } 55%, 100% { background-position: -60% 0; } }
+      .x-lockrow { display: flex; align-items: center; gap: 16px; }
+      .x-lock { width: 46px; height: 46px; flex: none; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgb(212 175 106 / 0.45); color: var(--x-gold-2); }
+      .x-blur { font-family: var(--x-serif); font-size: clamp(24px, 4vw, 34px); filter: blur(9px); color: var(--x-ink); user-select: none; }
+
+      /* slider */
+      .x-slider { width: 100%; margin-top: 18px; -webkit-appearance: none; appearance: none; background: transparent; height: 32px; }
+      .x-slider::-webkit-slider-runnable-track { height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--x-gold-1), rgb(255 255 255 / 0.12)); }
+      .x-slider::-moz-range-track { height: 3px; border-radius: 3px; background: rgb(255 255 255 / 0.14); }
+      .x-slider::-moz-range-progress { height: 3px; border-radius: 3px; background: var(--x-gold-1); }
+      .x-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; margin-top: -10.5px; border-radius: 50%; background: linear-gradient(160deg, var(--x-gold-2), var(--x-gold-1)); border: 0; cursor: pointer; box-shadow: 0 2px 10px rgb(0 0 0 / 0.5); }
+      .x-slider::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; background: var(--x-gold-1); border: 0; cursor: pointer; }
+      .x-guess { font-family: var(--x-serif); font-weight: 500; font-size: clamp(32px, 6vw, 52px); font-variant-numeric: tabular-nums; }
+
+      /* founding brands */
+      .x-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+      @media (max-width: 900px) { .x-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      .x-tile {
+        border: 1px solid var(--x-line);
+        border-radius: 18px;
+        padding: 22px 18px 18px;
+        background: linear-gradient(180deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.01));
+        min-height: 168px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .x-tile__no { font-family: var(--x-serif); font-size: 15px; color: var(--x-gold-1); letter-spacing: 0.04em; }
+      .x-tile__lock { margin-top: auto; color: var(--x-gold-1); opacity: 0.8; }
+      .x-tile__date { font-size: 13px; color: var(--x-ink-3); }
+      .x-tile__name { filter: blur(7px); font-family: var(--x-serif); font-size: 19px; color: var(--x-ink-2); user-select: none; }
+
+      /* board */
+      .x-badge-preview {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid rgb(212 175 106 / 0.5);
+        border-radius: 999px;
+        padding: 7px 14px;
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--x-gold-2);
+        background: var(--x-gold-wash);
+      }
+      .x-tabs { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--x-line); border-radius: 999px; background: var(--x-glass); }
+      .x-tabs button { min-height: 38px; padding: 0 18px; border: 0; border-radius: 999px; background: transparent; color: var(--x-ink-2); font: 500 14px/1 var(--x-ui); cursor: pointer; }
+      .x-tabs button[aria-selected="true"] { background-color: var(--x-gold-1); background-image: var(--x-gold); color: #14110b; }
+      .x-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+      .x-chips button { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--x-line); background: transparent; color: var(--x-ink-2); font: 400 13px/1 var(--x-ui); cursor: pointer; }
+      .x-chips button[aria-pressed="true"] { border-color: rgb(212 175 106 / 0.6); color: var(--x-gold-2); background: var(--x-gold-wash); }
+
+      .x-podium { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: stretch; margin-top: 14px; }
+      @media (max-width: 760px) { .x-podium { grid-template-columns: 1fr; } }
+      .x-pod {
+        position: relative;
+        border: 1px solid var(--x-line);
+        border-radius: 22px;
+        padding: 22px;
+        background: linear-gradient(180deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.012));
+        overflow: hidden;
+      }
+      .x-pod--1 { border-color: rgb(212 175 106 / 0.45); padding-block: 34px; box-shadow: 0 0 60px rgb(255 122 26 / 0.1); }
+      .x-pod--1::before { content: ""; position: absolute; inset: -60% -20% auto; height: 240px; background: radial-gradient(ellipse at 50% 0%, rgb(255 122 26 / 0.18), transparent 70%); pointer-events: none; }
+      .x-pod > * { position: relative; }
+      .x-pod__rank { font-family: var(--x-serif); font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; }
+      .x-pod--1 .x-pod__rank { color: var(--x-gold-2); }
+      .x-pod--2 .x-pod__rank { color: #cfd2d6; }
+      .x-pod--3 .x-pod__rank { color: #c89b76; }
+      .x-pod__name { font-family: var(--x-serif); font-size: clamp(20px, 2.4vw, 26px); margin-top: 12px; }
+      .x-pod__tag { color: var(--x-ink-2); font-size: 14px; margin-top: 6px; }
+      .x-pod__bid { font-family: var(--x-serif); font-weight: 500; font-size: clamp(26px, 3.6vw, 36px); font-variant-numeric: tabular-nums; margin-top: 16px; }
+      .x-pod--1 .x-pod__bid { color: #e6c98d; }
+
+      .x-mono {
+        width: 42px; height: 42px; flex: none;
+        display: grid; place-items: center;
+        border-radius: 50%;
+        border: 1px solid var(--x-line-2);
+        background: #18181a;
+        font: 600 13px/1 var(--x-ui);
+        letter-spacing: 0.02em;
+        color: var(--x-ink);
+      }
+      .x-pod .x-mono { width: 52px; height: 52px; font-size: 15px; }
+      .x-pod--1 .x-mono { border-color: rgb(212 175 106 / 0.55); color: var(--x-gold-2); }
+
+      .x-rows { margin-top: 14px; border: 1px solid var(--x-line); border-radius: 20px; overflow: hidden; }
+      .x-row { display: grid; grid-template-columns: 44px 42px minmax(0, 1fr) auto auto; align-items: start; gap: 14px; padding: 14px 18px; border-top: 1px solid var(--x-line); }
+      .x-row:first-child { border-top: 0; }
+      .x-row__rank { font-family: var(--x-serif); font-size: 18px; color: var(--x-ink-3); font-variant-numeric: tabular-nums; }
+      .x-row__name { font-weight: 500; }
+      .x-row__meta { font-size: 13px; color: var(--x-ink-2); margin-top: 2px; }
+      .x-row__bid { font-family: var(--x-serif); font-size: 19px; font-variant-numeric: tabular-nums; }
+      .x-row__go { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--x-line); color: var(--x-ink-2); text-decoration: none; }
+      .x-row__go:hover { color: var(--x-gold-2); border-color: rgb(212 175 106 / 0.5); }
+      @media (max-width: 620px) {
+        .x-row { grid-template-columns: 30px 38px minmax(0, 1fr) auto; gap: 10px; padding: 14px; }
+        .x-row__go { display: none; }
+        .x-row__bid { font-size: 17px; }
+      }
+      .x-in { opacity: 0; transform: translateY(10px); animation: x-rise 520ms var(--ease-out) forwards; }
+      @keyframes x-rise { to { opacity: 1; transform: none; } }
+
+      .x-claim { border: 1px solid var(--x-line); border-radius: 22px; padding: 24px; background: linear-gradient(180deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.012)); }
+      .x-claim h3 { font-family: var(--x-serif); font-weight: 500; font-size: 22px; }
+      .x-stepper { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+      .x-stepper button { width: 44px; height: 44px; flex: none; border-radius: 50%; border: 1px solid var(--x-line-2); background: transparent; color: var(--x-ink); font-size: 20px; line-height: 1; cursor: pointer; }
+      .x-stepper button:hover { background: var(--x-glass); }
+      .x-amount { flex: 1 1 auto; min-width: 0; text-align: center; font-family: var(--x-serif); font-weight: 500; font-size: clamp(24px, 4vw, 32px); font-variant-numeric: tabular-nums; border: 1px solid var(--x-line); border-radius: 14px; background: rgb(0 0 0 / 0.25); padding: 10px; color: var(--x-ink); }
+      .x-stack { display: grid; gap: 10px; margin-top: 14px; }
+      .x-board-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 0.42fr); gap: 20px; align-items: start; }
+      @media (max-width: 980px) { .x-board-grid { grid-template-columns: 1fr; } }
+
+      /* modal */
+      .x-modal { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 20px; background: rgb(6 6 7 / 0.78); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+      .x-modal[hidden] { display: none; }
+      .x-modal__card { width: min(100%, 460px); border: 1px solid rgb(212 175 106 / 0.3); border-radius: 22px; padding: 28px; background: var(--x-bg-2); box-shadow: 0 30px 80px rgb(0 0 0 / 0.6); }
+      .x-modal__card h3 { font-family: var(--x-serif); font-weight: 500; font-size: 24px; }
+
+      /* steps */
+      .x-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+      @media (max-width: 860px) { .x-steps { grid-template-columns: 1fr; } }
+      .x-step { border: 1px solid var(--x-line); border-radius: 20px; padding: 26px; background: linear-gradient(180deg, rgb(255 255 255 / 0.035), transparent); }
+      .x-step__n { font-family: var(--x-serif); font-size: 13px; letter-spacing: 0.18em; color: var(--x-gold-1); }
+      .x-step h3 { font-family: var(--x-serif); font-weight: 500; font-size: 22px; margin-top: 14px; }
+      .x-step p { margin-top: 10px; color: var(--x-ink-2); }
+
+      /* rules */
+      .x-rules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 36px; }
+      @media (max-width: 860px) { .x-rules { grid-template-columns: 1fr; } }
+      .x-rule { display: flex; gap: 14px; padding: 18px 0; border-top: 1px solid var(--x-line); }
+      .x-rule__i { font-family: var(--x-serif); color: var(--x-gold-1); font-size: 14px; font-variant-numeric: tabular-nums; padding-top: 3px; }
+      .x-rule p { color: var(--x-ink-2); }
+      .x-rule b { color: var(--x-ink); font-weight: 500; }
+
+      /* faq */
+      .x-faq { border-top: 1px solid var(--x-line); }
+      .x-faq details { border-bottom: 1px solid var(--x-line); }
+      .x-faq summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 20px 0; font-family: var(--x-serif); font-size: clamp(17px, 2vw, 21px); min-height: 44px; }
+      .x-faq summary::-webkit-details-marker { display: none; }
+      .x-faq summary::after { content: "+"; color: var(--x-gold-1); font-size: 22px; line-height: 1; transition: transform 200ms var(--ease-out); }
+      .x-faq details[open] summary::after { transform: rotate(45deg); }
+      .x-faq p { padding-bottom: 20px; color: var(--x-ink-2); max-width: 64ch; }
+
+      /* footer */
+      .x-foot { border-top: 1px solid var(--x-line); padding-block: clamp(48px, 7vw, 84px) 40px; }
+      .x-foot__line { font-family: var(--x-serif); font-weight: 400; font-size: clamp(30px, 5.5vw, 54px); line-height: 1.08; letter-spacing: -0.02em; }
+      .x-foot__bot { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; justify-content: space-between; margin-top: 48px; padding-top: 22px; border-top: 1px solid var(--x-line); font-size: 13px; color: var(--x-ink-3); }
+      .x-foot__bot nav { display: flex; flex-wrap: wrap; gap: 16px; }
+      .x-foot__bot a { color: var(--x-ink-2); text-decoration: none; display: inline-flex; align-items: center; min-height: 36px; }
+      .x-foot__bot a:hover { color: var(--x-gold-2); }
+
+      /* India-first additions */
+      .x-hero__line { margin-top: 14px; font-size: 15px; color: var(--x-ink); font-weight: 500; }
+      .x-tagline { font-family: var(--x-dev); }
+      .x-sample { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: 0.06em; color: var(--x-ink-2); border: 1px solid var(--x-line-2); border-radius: 999px; padding: 5px 12px; }
+      .x-sample::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--x-ember); }
+      .x-paid { display: inline-flex; align-items: center; font: 500 12px/1 var(--x-ui); letter-spacing: 0.04em; color: var(--x-ink-2); border: 1px solid var(--x-line-2); border-radius: 6px; padding: 4px 7px; white-space: nowrap; vertical-align: middle; }
+      .x-code { display: inline-flex; align-items: stretch; min-height: 44px; border: 1px dashed rgb(212 175 106 / 0.55); border-radius: 999px; overflow: hidden; background: var(--x-gold-wash); max-width: 100%; }
+      .x-code__off { display: inline-flex; align-items: center; padding: 0 4px 0 14px; font-size: 13px; color: var(--x-ink-2); white-space: nowrap; }
+      .x-code code { display: inline-flex; align-items: center; padding: 0 10px; font-family: "Geist Mono", ui-monospace, monospace; font-size: 13px; color: var(--x-gold-2); letter-spacing: 0.06em; }
+      .x-code__btn { border: 0; border-left: 1px dashed rgb(212 175 106 / 0.4); background: transparent; color: var(--x-ink); font: 500 13px/1 var(--x-ui); padding: 0 14px; cursor: pointer; min-width: 64px; min-height: 44px; }
+      .x-code__btn:hover { background: rgb(212 175 106 / 0.12); }
+      .x-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+      .x-controls .x-chips { margin-top: 0; }
+      .x-chiplabel { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--x-ink-3); margin-top: 18px; }
+      .x-chiplabel + .x-chips { margin-top: 8px; }
+
+      .x-rank-badge { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 7px 14px; font: 600 12px/1 var(--x-ui); letter-spacing: 0.08em; text-transform: uppercase; color: #14110b; background-color: var(--x-gold-1); background-image: var(--x-gold); }
+      .x-rank-badge--def { background: transparent; color: var(--x-gold-2); border: 1px solid var(--x-ember); box-shadow: 0 0 22px rgb(255 122 26 / 0.18); }
+      .x-spot { position: relative; margin-top: 26px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 22px 28px; align-items: center; border: 1px solid rgb(212 175 106 / 0.45); border-radius: 24px; padding: clamp(22px, 3.4vw, 34px); background: #111112; overflow: hidden; box-shadow: 0 0 60px rgb(255 122 26 / 0.1); }
+      .x-spot::before { content: ""; position: absolute; inset: -70% -10% auto 30%; height: 300px; background: radial-gradient(ellipse at 50% 0%, rgb(255 122 26 / 0.16), transparent 70%); pointer-events: none; }
+      .x-spot > * { position: relative; }
+      @media (max-width: 760px) { .x-spot { grid-template-columns: 1fr; } }
+      .x-avatar { width: clamp(84px, 11vw, 112px); aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgb(212 175 106 / 0.6); background: radial-gradient(circle at 30% 25%, #2a2316, #141210); font-family: var(--x-serif); font-weight: 500; font-size: clamp(28px, 3.6vw, 38px); color: var(--x-gold-2); }
+      .x-spot__founder { font-family: var(--x-serif); font-size: clamp(24px, 3.2vw, 34px); line-height: 1.1; margin-top: 12px; }
+      .x-spot__story { margin-top: 8px; color: var(--x-ink-2); max-width: 46ch; }
+      .x-spot__side { display: grid; gap: 12px; justify-items: start; }
+      @media (min-width: 761px) { .x-spot__side { justify-items: end; text-align: right; } }
+      .x-meta { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin-top: 12px; }
+      .x-meta span:not(.x-paid) { font-size: 13px; color: var(--x-ink-2); border-radius: 999px; background: var(--x-glass); border: 1px solid var(--x-line); padding: 4px 10px; }
+      .x-empty { padding: 28px; text-align: center; color: var(--x-ink-2); border: 1px dashed var(--x-line-2); border-radius: 20px; margin-top: 26px; }
+      .x-row__story { font-size: 13px; color: var(--x-ink-3); margin-top: 2px; }
+      .x-row__deal { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+      .x-pod .x-code { margin-top: 14px; }
+
+      .x-city { border: 1px solid var(--x-line); border-radius: 20px; padding: 20px 22px; background: #111112; margin-bottom: 26px; }
+      .x-city__top { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+      .x-city h3 { font-family: var(--x-serif); font-weight: 500; font-size: clamp(19px, 2.4vw, 24px); }
+      .x-bar { display: flex; height: 12px; border-radius: 999px; overflow: hidden; margin-top: 16px; background: var(--x-glass); }
+      .x-bar span { display: block; height: 100%; transition: width 600ms var(--ease-out); }
+      .x-bar span:first-child { background-color: var(--x-gold-1); background-image: var(--x-gold); }
+      .x-bar span:last-child { background: #4a4740; }
+      .x-city__legend { display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; font-size: 14px; }
+      .x-city__legend b { font-family: var(--x-serif); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+      .x-badges { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+      @media (max-width: 760px) { .x-badges { grid-template-columns: 1fr; } }
+      .x-badgecard { border: 1px solid var(--x-line); border-radius: 20px; padding: 26px; background: #111112; }
+      .x-badgecard p { margin-top: 14px; color: var(--x-ink-2); }
+
+      .x-cats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+      @media (max-width: 900px) { .x-cats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      @media (max-width: 560px) { .x-cats { grid-template-columns: 1fr; } }
+      .x-cat { display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--x-line); border-radius: 20px; padding: 22px; background: #111112; }
+      .x-cat__name { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--x-gold-1); }
+      .x-cat__brand { font-family: var(--x-serif); font-size: 22px; }
+      .x-cat__gap { font-size: 13px; color: var(--x-ink-2); }
+      .x-cat .x-btn { margin-top: auto; align-self: flex-start; }
+
+      .x-deals { border: 1px solid var(--x-line); border-radius: 20px; overflow: hidden; }
+      .x-deal { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 18px; border-top: 1px solid var(--x-line); }
+      .x-deal:first-child { border-top: 0; }
+      .x-deal__off { font-family: var(--x-serif); font-size: 19px; color: #e6c98d; }
+      @media (max-width: 620px) { .x-deal { grid-template-columns: 38px minmax(0, 1fr); } .x-deal .x-code { grid-column: 1 / -1; justify-self: start; } }
+
+      .x-reelwrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 300px); gap: clamp(28px, 5vw, 64px); align-items: center; }
+      @media (max-width: 760px) { .x-reelwrap { grid-template-columns: 1fr; } }
+      .x-reel { position: relative; aspect-ratio: 9 / 16; width: 100%; max-width: 300px; justify-self: center; border-radius: 28px; border: 1px solid rgb(212 175 106 / 0.4); overflow: hidden; padding: 22px 20px; display: flex; flex-direction: column; background: radial-gradient(120% 70% at 50% 0%, rgb(255 122 26 / 0.22), transparent 60%), linear-gradient(180deg, #17140f, #0c0c0d 70%); box-shadow: 0 30px 80px rgb(0 0 0 / 0.5); }
+      .x-reel__top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+      .x-live { display: inline-flex; align-items: center; gap: 6px; font: 600 12px/1 var(--x-ui); letter-spacing: 0.1em; color: #fff; background: #c2410c; border-radius: 6px; padding: 5px 8px; }
+      .x-live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #fff; }
+      .x-reel__mid { margin-top: auto; display: grid; gap: 10px; justify-items: start; }
+      .x-reel .x-avatar { width: 84px; font-size: 28px; }
+      .x-reel__name { font-family: var(--x-serif); font-size: 26px; line-height: 1.1; }
+      .x-reel__bid { font-family: var(--x-serif); font-size: 30px; color: #e6c98d; font-variant-numeric: tabular-nums; }
+      .x-reel__foot { margin-top: 16px; font-size: 12px; color: var(--x-ink-2); }
+
+      .x-feed { list-style: none; padding: 0; margin: 0; border: 1px solid var(--x-line); border-radius: 20px; overflow: hidden; }
+      .x-feed li { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 14px; padding: 16px 18px; border-top: 1px solid var(--x-line); }
+      .x-feed li:first-child { border-top: 0; }
+      .x-feed time { font-size: 13px; color: var(--x-ink-3); font-variant-numeric: tabular-nums; padding-top: 2px; }
+      .x-feed b { color: var(--x-ink); font-weight: 500; }
+      .x-feed p { color: var(--x-ink-2); }
+
+      .x-trust { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--x-line); display: flex; gap: 12px; align-items: flex-start; }
+      .x-trust svg { flex: none; color: var(--x-gold-1); margin-top: 2px; }
+      .x-trust p { font-size: 13px; color: var(--x-ink-2); }
+      .x-notice { margin-top: 18px; border: 1px solid rgb(212 175 106 / 0.35); border-radius: 14px; padding: 14px 16px; background: var(--x-gold-wash); font-size: 13px; color: var(--x-ink-2); }
+      .x-notice b { color: var(--x-ink); font-weight: 600; }
+      .x-paybtn[disabled] { opacity: 0.55; cursor: not-allowed; width: 100%; margin-top: 12px; }
+      .x-steps--6 { margin-top: 18px; }
+      .x-subhead { font-family: var(--x-serif); font-weight: 400; font-size: clamp(22px, 3vw, 30px); margin-top: clamp(44px, 6vw, 72px); margin-bottom: 8px; }
+
+      .x-pod, .x-tile, .x-step, .x-claim { background: #111112; }
+      .x-logo { min-height: 44px; min-width: 44px; align-items: center; }
+      .x-tabs button, .x-chips button, .x-btn--sm { min-height: 44px; }
+      .x-foot__bot a { min-height: 44px; min-width: 44px; justify-content: center; }
+      @media (prefers-reduced-motion: reduce) {
+        .x-shimmer::after, .x-ticker__run { animation: none; }
+        .x-in { animation: none; opacity: 1; transform: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="top">
+      <header class="x-nav">
+        <div class="x-wrap x-nav__in">
+          <a class="x-logo" href="#top"><b>Boli</b></a>
+          <nav class="x-navlinks" aria-label="Sections">
+            <a href="#board">Board</a>
+            <a href="#categories">Categories</a>
+            <a href="#deals">Deals</a>
+            <a href="#aaj">Today's #1</a>
+            <a href="#overtakes">Overtakes</a>
+            <a href="#how">How it works</a>
+            <a href="#rules">Rules</a>
+            <a href="#faq">FAQ</a>
+          </nav>
+          <a class="x-btn x-btn--gold x-btn--sm" href="#waitlist">Join waitlist</a>
+        </div>
+      </header>
+
+      <div class="x-ticker" aria-label="Preview ticker">
+        <div class="x-wrap x-ticker__in">
+          <span class="x-ticker__tag">Preview</span>
+          <div class="x-ticker__track">
+            <div class="x-ticker__run" aria-hidden="false">
+              <span><i>Kesar Kosh</i> holds all-time #1 at ₹48,500</span>
+              <span><i>Chatpata Lab</i> took Today's #1 by ₹100</span>
+              <span><i>Sukoon Home</i> raised to ₹3,100</span>
+              <span class="x-fine">Sample data. Real boards open 16 Nov, 8 PM IST</span>
+            </div>
+            <div class="x-ticker__run" aria-hidden="true">
+              <span><i>Kesar Kosh</i> holds all-time #1 at ₹48,500</span>
+              <span><i>Chatpata Lab</i> took Today's #1 by ₹100</span>
+              <span><i>Sukoon Home</i> raised to ₹3,100</span>
+              <span class="x-fine">Sample data. Real boards open 16 Nov, 8 PM IST</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <main class="main">
+        <section class="x-hero" id="waitlist" aria-labelledby="hero-title">
+          <div class="x-wrap x-hero__in">
+            <div>
+              <p class="x-eyebrow">India's first live auction for brands</p>
+              <h1 id="hero-title">Bid boldly. <span class="x-gold-text">Hold #1.</span></h1>
+              <p class="x-hero__sub">
+                Less than the cost of one Meta customer to put your brand, and your face, on India's most-watched board.
+              </p>
+              <p class="x-hero__line">₹199 to list. Real clicks, shown publicly. No fake activity.</p>
+              <div id="wait-box">
+                <form class="x-form" id="wait-form" novalidate>
+                  <input class="x-input" type="email" name="email" placeholder="you@brand.in" aria-label="Email address" autocomplete="email" required />
+                  <button class="x-btn x-btn--gold" type="submit">Get early access</button>
+                </form>
+                <p class="x-err" id="wait-err" hidden>Enter a valid email address.</p>
+                <p class="x-fine" style="margin-top: 12px">Founding brands get their first listing free.</p>
+              </div>
+              <p class="x-fine" style="margin-top: 8px">We use your email only to send launch updates. Unsubscribe anytime. We never sell your data.</p>
+            </div>
+            <div class="x-count" aria-live="off">
+              <p class="x-count__label">The gavel drops in</p>
+              <div class="x-count__grid" role="timer" aria-label="Countdown to launch, Monday 16 November 2026, 8:00 PM IST">
+                <div class="x-count__cell"><span class="x-count__n" data-cd="d">00</span><span class="x-count__u">Days</span></div>
+                <div class="x-count__cell"><span class="x-count__n" data-cd="h">00</span><span class="x-count__u">Hours</span></div>
+                <div class="x-count__cell"><span class="x-count__n" data-cd="m">00</span><span class="x-count__u">Mins</span></div>
+                <div class="x-count__cell"><span class="x-count__n" data-cd="s">00</span><span class="x-count__u">Secs</span></div>
+              </div>
+              <p class="x-fine" style="margin-top: 12px">Monday 16 November 2026 · 8:00 PM IST</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="x-sec" id="sealed" aria-labelledby="sealed-title">
+          <div class="x-wrap">
+            <div class="x-sealed x-shimmer">
+              <div class="x-lockrow">
+                <span class="x-lock" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>
+                </span>
+                <div>
+                  <p class="x-eyebrow" style="color: var(--x-gold-1)">Rank #1 · sealed</p>
+                  <p class="x-blur" aria-hidden="true">Brand Name Hidden</p>
+                </div>
+              </div>
+              <h2 class="x-serif" id="sealed-title" style="font-size: clamp(30px, 5vw, 52px); line-height: 1.08; margin-top: 26px">
+                Who takes #1 on launch night?
+              </h2>
+              <div style="margin-top: 30px; max-width: 620px">
+                <p class="x-eyebrow">Guess the launch-night #1 bid</p>
+                <p class="x-fine" style="margin-top: 6px">Just for fun. No money, no prize.</p>
+                <p class="x-guess x-gold-text" id="guess-val" style="margin-top: 10px">₹25,000</p>
+                <input class="x-slider" id="guess" type="range" min="0" max="1000" value="700" aria-label="Your guess for the launch-night #1 bid" />
+                <div style="display: flex; justify-content: space-between" class="x-fine x-num"><span>₹199</span><span>₹1,00,000</span></div>
+                <div id="guess-box" style="margin-top: 20px">
+                  <button class="x-btn x-btn--gold" type="button" id="guess-lock">Lock my guess</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="x-sec" id="founding" aria-labelledby="founding-title">
+          <div class="x-wrap">
+            <div class="x-head">
+              <p class="x-eyebrow">One reveal a day</p>
+              <h2 id="founding-title">Founding Brands</h2>
+              <p>We reveal one founding brand every day until launch.</p>
+            </div>
+            <div class="x-grid" id="tiles"></div>
+            <p style="margin-top: 24px"><a class="x-btn" href="#waitlist">Run a D2C brand? Apply to be a Founding Brand →</a></p>
+          </div>
+        </section>
+
+        <section class="x-sec" id="board" aria-labelledby="board-title">
+          <div class="x-wrap">
+            <p class="x-sample">Sample data. Real boards open 16 Nov, 8 PM IST</p>
+            <div class="x-head" style="margin-top: 22px">
+              <h2 id="board-title">The board. Rank is what you pay.</h2>
+              <p>This is what launch night looks like. Every brand and founder below is fictional, and every rank is a paid listing.</p>
+            </div>
+            <div class="x-city" aria-labelledby="city-title">
+              <div class="x-city__top">
+                <h3 id="city-title">Bengaluru vs Mumbai: who's on top tonight?</h3>
+                <span class="x-sample">Sample data. Real boards open 16 Nov, 8 PM IST</span>
+              </div>
+              <div class="x-bar" role="img" id="city-bar" aria-label="Today's total bids, Bengaluru against Mumbai"><span id="city-a"></span><span id="city-b"></span></div>
+              <div class="x-city__legend">
+                <span>Bengaluru <b id="city-a-n">₹0</b></span>
+                <span>Mumbai <b id="city-b-n">₹0</b></span>
+              </div>
+              <p class="x-fine" style="margin-top: 10px">Today's total bids per city. Friendly rivalry only: both cities make great brands.</p>
+            </div>
+            <div class="x-board-grid">
+              <div>
+                <div class="x-controls">
+                  <div class="x-tabs" role="tablist" aria-label="Board">
+                    <button role="tab" type="button" data-board="all" aria-selected="true">All-time</button>
+                    <button role="tab" type="button" data-board="today" aria-selected="false">Today</button>
+                    <button role="tab" type="button" data-board="daily" aria-selected="false">Daily</button>
+                  </div>
+                </div>
+                <p class="x-chiplabel" id="city-label">City</p>
+                <div class="x-chips" id="cities" role="group" aria-labelledby="city-label"></div>
+                <p class="x-chiplabel" id="cat-label">Category</p>
+                <div class="x-chips" id="chips" role="group" aria-labelledby="cat-label"></div>
+                <div id="spot"></div>
+                <div class="x-podium" id="podium"></div>
+                <div class="x-rows" id="rows"></div>
+              </div>
+              <aside class="x-claim" aria-labelledby="claim-title">
+                <p class="x-eyebrow" style="color: var(--x-gold-1)">Claim #1</p>
+                <h3 id="claim-title" style="margin-top: 10px">Take the top spot</h3>
+                <p class="x-fine" style="margin-top: 6px">Current #1 + ₹100, prefilled.</p>
+                <div class="x-stepper">
+                  <button type="button" id="amt-minus" aria-label="Lower by ₹100">−</button>
+                  <input class="x-amount" id="amt" inputmode="numeric" aria-label="Bid amount in rupees" value="₹48,600" />
+                  <button type="button" id="amt-plus" aria-label="Raise by ₹100">+</button>
+                </div>
+                <div class="x-stack">
+                  <input class="x-input" type="text" id="claim-site" placeholder="brand.in or @instagram" aria-label="Brand website or Instagram handle" />
+                  <select class="x-select" id="claim-cat" aria-label="Category"></select>
+                  <button class="x-btn x-btn--gold" type="button" id="claim-btn">Claim rank</button>
+                </div>
+                <p class="x-fine" style="margin-top: 12px">Minimum ₹199, whole rupees. Raising only charges the difference.</p>
+                <div class="x-trust">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+                  <p>A bid buys a listing, nothing more. Payments via Razorpay. Receipt/invoice for every payment, so you can book it as marketing spend. Clicks shown exactly as recorded.</p>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </section>
+
+        <section class="x-sec" id="badge" aria-labelledby="badge-title">
+          <div class="x-wrap">
+            <div class="x-head">
+              <p class="x-eyebrow">The #1 badge</p>
+              <h2 id="badge-title">A badge you earn in public, not one you design yourself.</h2>
+              <p>Hold #1 for a night and the badge is yours to show on your site and socials.</p>
+            </div>
+            <div class="x-badges">
+              <div class="x-badgecard">
+                <span class="x-rank-badge">★ Ranked #1 · Today's #1</span>
+                <p>For the brand on top of tonight's board.</p>
+              </div>
+              <div class="x-badgecard">
+                <span class="x-rank-badge x-rank-badge--def">★ Defending #1</span>
+                <p>For the brand that held the #1 spot yesterday and still holds it tonight.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="x-sec" id="categories" aria-labelledby="cat-title">
+          <div class="x-wrap">
+            <p class="x-sample">Sample data. Real boards open 16 Nov, 8 PM IST</p>
+            <div class="x-head" style="margin-top: 22px">
+              <p class="x-eyebrow">Category boards</p>
+              <h2 id="cat-title">Every category has its own #1. Fight your real rivals.</h2>
+              <p>Six boards, ranked on the board you pick above.</p>
+            </div>
+            <div class="x-cats" id="cats"></div>
+          </div>
+        </section>
+
+        <section class="x-sec" id="deals" aria-labelledby="deals-title">
+          <div class="x-wrap">
+            <p class="x-sample">Sample data. Real boards open 16 Nov, 8 PM IST</p>
+            <div class="x-head" style="margin-top: 22px">
+              <p class="x-eyebrow">Deals board</p>
+              <h2 id="deals-title">Come for the deals, stay for the drama.</h2>
+              <p>Every listing carries a discount code. Here they all are, biggest first.</p>
+            </div>
+            <div class="x-deals" id="deals-list"></div>
+          </div>
+        </section>
+
+        <section class="x-sec" id="aaj" aria-labelledby="aaj-title">
+          <div class="x-wrap x-reelwrap">
+            <div>
+              <p class="x-sample">Sample data. Real boards open 16 Nov, 8 PM IST</p>
+              <div class="x-head" style="margin-top: 22px; margin-bottom: 0">
+                <p class="x-eyebrow">Today's #1</p>
+                <h2 id="aaj-title">Today's #1, live every night at 9 PM IST.</h2>
+                <p>One vertical reel a night: tonight's #1, the founder, the bid and the code. Posted to our Instagram, YouTube Shorts and X.</p>
+              </div>
+            </div>
+            <article class="x-reel" id="reel" aria-label="Sample reel card for today's #1"></article>
+          </div>
+        </section>
+
+        <section class="x-sec" id="overtakes" aria-labelledby="ot-title">
+          <div class="x-wrap">
+            <p class="x-sample">Sample data. Real boards open 16 Nov, 8 PM IST</p>
+            <div class="x-head" style="margin-top: 22px">
+              <p class="x-eyebrow">Overtakes</p>
+              <h2 id="ot-title">Who's ahead, who's behind. Every rank change, posted.</h2>
+              <p>Playful, never mean. Only listed brands that opted in to rivalry posts get tagged.</p>
+            </div>
+            <ul class="x-feed">
+              <li><time>9:04 PM</time><p><b>@ChatpataLab just overtook @PhoolMakhanaCo.</b> Photo finish: two snack brands, ₹100 apart. Will they bid back? 👀</p></li>
+              <li><time>8:51 PM</time><p><b>@HaldiGlow is now just ₹350 behind @KesarKosh.</b> The Skincare board is heating up. Anything can happen before 9 PM.</p></li>
+              <li><time>8:37 PM</time><p><b>@SukoonHome bites back:</b> +₹600 and ahead of @MittiGhar. A new #1 in Home.</p></li>
+              <li><time>8:20 PM</time><p><b>Mumbai leads tonight by ₹2,699.</b> Bengaluru, there's still time to bid.</p></li>
+              <li><time>8:02 PM</time><p><b>@DumdaarFit just took the #1 spot.</b> A new #1 in Health &amp; Fitness. @SaansWellness, your move.</p></li>
+              <li><time>7:45 PM</time><p><b>@Loomwali just passed @NeelDhaga.</b> A new #1 on the Fashion board, with a single bid.</p></li>
+            </ul>
+            <div class="x-share" style="margin-top: 20px">
+              <a class="x-btn x-btn--gold" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=Tag%20the%20rivalry%20you%20want%20settled%20on%20Boli%2C%20India%27s%20board%20for%20D2C%20brands.%20Bid%20boldly.%20Hold%20%231.%20boli.in">Tag the rivalry you want settled · Share on X</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="x-sec" id="how" aria-labelledby="how-title">
+          <div class="x-wrap">
+            <div class="x-head">
+              <p class="x-eyebrow">How it works</p>
+              <h2 id="how-title">Three steps. No review queue.</h2>
+            </div>
+            <div class="x-steps">
+              <article class="x-step">
+                <p class="x-step__n">01</p>
+                <h3>Add your brand</h3>
+                <p>Your website or Instagram handle, and pick a category.</p>
+              </article>
+              <article class="x-step">
+                <p class="x-step__n">02</p>
+                <h3>Place your bid</h3>
+                <p>Minimum ₹199, in whole rupees.</p>
+              </article>
+              <article class="x-step">
+                <p class="x-step__n">03</p>
+                <h3>Hold your spot</h3>
+                <p>Someone outbids you, you take it back. Raising only charges the difference.</p>
+              </article>
+            </div>
+            <h3 class="x-subhead">The India Loop</h3>
+            <p class="x-muted">What happens after you list, every night.</p>
+            <div class="x-steps x-steps--6">
+              <article class="x-step"><p class="x-step__n">01</p><h3>Brand bids</h3><p>₹199 to list. ₹100 over the current #1 takes the top spot.</p></article>
+              <article class="x-step"><p class="x-step__n">02</p><h3>Founder's face + deal goes live</h3><p>Name, photo or initials, story, city and a discount code, with the founder's consent.</p></article>
+              <article class="x-step"><p class="x-step__n">03</p><h3>Rivalry posted publicly</h3><p>Only between listed brands that opted in. Playful, never mean.</p></article>
+              <article class="x-step"><p class="x-step__n">04</p><h3>Shoppers come for the code</h3><p>Every listing carries a deal, and the Deals board collects them all.</p></article>
+              <article class="x-step"><p class="x-step__n">05</p><h3>Clicks shown publicly</h3><p>Exactly as recorded. No fake activity.</p></article>
+              <article class="x-step"><p class="x-step__n">06</p><h3>Rival bites back</h3><p>Overtaken? Raise on the same link and pay only the difference.</p></article>
+            </div>
+          </div>
+        </section>
+
+        <section class="x-sec" id="rules" aria-labelledby="rules-title">
+          <div class="x-wrap">
+            <div class="x-head">
+              <p class="x-eyebrow">Rules</p>
+              <h2 id="rules-title">Rank is what you pay. Nothing else.</h2>
+            </div>
+            <div class="x-rules">
+              <div class="x-rule"><span class="x-rule__i">01</span><p><b>Three boards.</b> All-time is the total ever paid and never expires. Today resets at midnight IST. Daily is one board per day, archived. Each board can be viewed by city and by category.</p></div>
+              <div class="x-rule"><span class="x-rule__i">02</span><p><b>New listings</b> start at ₹199, in whole rupees.</p></div>
+              <div class="x-rule"><span class="x-rule__i">03</span><p><b>Taking #1</b> costs at least ₹100 more than the current #1. Paying less still lists you at whatever rank that amount reaches. Equal amounts: the earlier listing ranks higher.</p></div>
+              <div class="x-rule"><span class="x-rule__i">04</span><p><b>Already listed?</b> Bid again on the same link. Checkout only charges the difference.</p></div>
+              <div class="x-rule"><span class="x-rule__i">05</span><p><b>Indian D2C brands only.</b> A brand website or Instagram handle you own. Valid business details (GST or company info) required.</p></div>
+              <div class="x-rule"><span class="x-rule__i">06</span><p><b>Not allowed:</b> adult content; betting or real-money gaming; alcohol, tobacco and vapes; drugs; weapons; crypto or investment schemes; MLM; medical cure claims; political or religious content; hate, caste or communal content; counterfeit goods; misleading claims; chat or invite links, URL shorteners and tracking parameters.</p></div>
+              <div class="x-rule"><span class="x-rule__i">07</span><p><b>Removals.</b> We can remove any listing that breaks these rules. Removed listings are refunded at our discretion.</p></div>
+              <div class="x-rule"><span class="x-rule__i">08</span><p><b>Payments</b> via UPI, cards and netbanking (Razorpay). A completed payment claims the rank. Receipt/invoice for every payment. Payments are otherwise non-refundable.</p></div>
+              <div class="x-rule"><span class="x-rule__i">09</span><p><b>Paid listing, always labelled.</b> Every listing shows a "Paid listing" tag. Ranks are bought, not earned.</p></div>
+              <div class="x-rule"><span class="x-rule__i">10</span><p><b>Visibility only.</b> Boli sells visibility only. We don't guarantee clicks, traffic, followers or sales.</p></div>
+              <div class="x-rule"><span class="x-rule__i">11</span><p><b>Rivalry posts.</b> We only tag brands that are listed and have opted in to rivalry posts. No mocking or disparaging any brand.</p></div>
+              <div class="x-rule"><span class="x-rule__i">12</span><p><b>Founder consent.</b> Founder photos and names appear only with the founder's consent, and can be removed on request.</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="x-sec" id="faq" aria-labelledby="faq-title">
+          <div class="x-wrap">
+            <div class="x-head">
+              <p class="x-eyebrow">FAQ</p>
+              <h2 id="faq-title">Questions, answered.</h2>
+            </div>
+            <div class="x-faq">
+              <details><summary>What is Boli?</summary><p>A public leaderboard where Indian D2C brands pay for a listing and rank by their bid. The highest bid holds the #1 spot.</p></details>
+              <details><summary>Is this gambling or a game?</summary><p>No. You pay a fixed, disclosed amount for a public listing. There's no chance, no prize and no winnings. It's paid visibility, like an ad slot.</p></details>
+              <details><summary>Why would anyone pay?</summary><p>Visibility. Every rank change is shared publicly, and the top spots are the first thing shoppers see. Boli sells visibility only. We don't guarantee clicks, traffic, followers or sales.</p></details>
+              <details><summary>When does it launch?</summary><p>Monday, 16 November 2026, 8 PM IST.</p></details>
+              <details><summary>What does it cost?</summary><p>From ₹199. #1 costs at least ₹100 more than the current #1.</p></details>
+              <details><summary>Do I get an invoice?</summary><p>Yes, a receipt/invoice for every payment.</p></details>
+              <details><summary>Can I get a refund if I'm outbid?</summary><p>No. Payments are non-refundable, and you can always raise your bid. The one exception: if we remove a listing for breaking the rules, refunds are at our discretion.</p></details>
+              <details><summary>Is this like Product Hunt?</summary><p>No votes, no hunters, no review queue. Just the bid.</p></details>
+              <details><summary>How do I become a Founding Brand?</summary><p>Join the waitlist and mention your brand. Founding brands get their first listing free.</p></details>
+            </div>
+          </div>
+        </section>
+
+        <section class="x-sec" id="terms" aria-labelledby="terms-title">
+          <div class="x-wrap">
+            <h2 class="x-serif" id="terms-title" style="font-size: 22px">Terms</h2>
+            <p class="x-fine" style="margin-top: 8px">Full terms will be published before bidding opens on 16 November 2026.</p>
+            <h2 class="x-serif" id="privacy" style="font-size: 22px; margin-top: 28px; scroll-margin-top: 80px">Privacy</h2>
+            <p class="x-fine" style="margin-top: 8px">We use your email only to send launch updates. Unsubscribe anytime. We never sell your data. The full privacy policy will be published before launch.</p>
+          </div>
+        </section>
+      </main>
+
+      <footer class="x-foot">
+        <div class="x-wrap">
+          <p class="x-foot__line">The gavel drops<br />16 November.</p>
+          <p class="x-muted" style="margin-top: 20px; max-width: 42ch">
+            Bid boldly. Hold #1. Join the waitlist to list on launch night.
+          </p>
+          <p style="margin-top: 24px"><a class="x-btn x-btn--gold" href="#waitlist">Join waitlist</a></p>
+          <p class="x-fine" style="margin-top: 28px">Boli sells visibility only. We don't guarantee clicks, traffic, followers or sales. All brands and founders shown are fictional sample data.</p>
+          <p class="x-fine" style="margin-top: 6px">Contact &amp; grievances: [email to be added]</p>
+          <div class="x-foot__bot">
+            <p>Built in India by a first-time founder. © 2026 Boli.</p>
+            <nav aria-label="Footer">
+              <a href="#rules">Rules</a>
+              <a href="#faq">FAQ</a>
+              <a href="#terms">Terms</a>
+              <a href="#privacy">Privacy</a>
+            </nav>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <div class="x-modal" id="claim-modal" hidden role="dialog" aria-modal="true" aria-labelledby="claim-modal-title">
+      <div class="x-modal__card">
+        <p class="x-eyebrow">Bidding is closed</p>
+        <h3 id="claim-modal-title" style="margin-top: 12px">Bidding opens on 16 November, 8 PM IST.</h3>
+        <div class="x-notice">
+          <p>Your bid: <b class="x-num" id="modal-amt">₹0</b> · Paid listing</p>
+          <p style="margin-top: 8px"><b>Payments are non-refundable.</b> We can remove any listing that breaks the rules; removed listings are refunded at our discretion. Boli sells visibility only. We don't guarantee clicks, traffic, followers or sales. Receipt/invoice for every payment.</p>
+        </div>
+        <button class="x-btn x-btn--gold x-paybtn" type="button" disabled>Pay via Razorpay · opens 16 Nov</button>
+        <p class="x-muted" style="margin-top: 16px">Join the waitlist to get notified first.</p>
+        <form class="x-form" id="modal-form" novalidate style="margin-top: 12px">
+          <input class="x-input" type="email" name="email" placeholder="you@brand.in" aria-label="Email address" required />
+          <button class="x-btn x-btn--gold" type="submit">Notify me</button>
+        </form>
+        <p class="x-err" id="modal-err" hidden>Enter a valid email address.</p>
+        <p class="x-fine" style="margin-top: 8px">We use your email only to send launch updates. Unsubscribe anytime. We never sell your data.</p>
+        <p class="x-fine" id="modal-done" hidden>You're in. We'll email you before the gavel drops.</p>
+        <p style="margin-top: 18px"><button class="x-btn x-btn--sm" type="button" id="claim-close">Close</button></p>
+      </div>
+    </div>
+
+    <script src="hark.js"></script>
+    <script>
+      (function () {
+        "use strict";
+        var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var $ = function (s, r) { return (r || document).querySelector(s); };
+        var inr = function (n) { return "₹" + Math.round(n).toLocaleString("en-IN"); };
+        var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+
+        /* countdown */
+        var LAUNCH = Date.parse("2026-11-16T20:00:00+05:30");
+        var cd = { d: $('[data-cd="d"]'), h: $('[data-cd="h"]'), m: $('[data-cd="m"]'), s: $('[data-cd="s"]') };
+        var p2 = function (n) { return (n < 10 ? "0" : "") + n; };
+        function tick() {
+          var t = Math.max(0, LAUNCH - Date.now());
+          var s = Math.floor(t / 1000);
+          cd.d.textContent = p2(Math.floor(s / 86400));
+          cd.h.textContent = p2(Math.floor((s % 86400) / 3600));
+          cd.m.textContent = p2(Math.floor((s % 3600) / 60));
+          cd.s.textContent = p2(s % 60);
+        }
+        tick();
+        setInterval(tick, 1000);
+
+        /* waitlist */
+        var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+        function shareText(handle) {
+          return "I just joined the waitlist for Boli, India's first live auction for D2C brands. Highest bid takes #1. boli.in/?ref=" + handle;
+        }
+        function successHTML(email) {
+          var handle = email.split("@")[0].toLowerCase().replace(/[^a-z0-9._-]/g, "") || "brand";
+          var link = "boli.in/?ref=" + handle;
+          var text = encodeURIComponent(shareText(handle));
+          var url = encodeURIComponent("https://" + link);
+          return (
+            '<div class="x-ok" role="status">' +
+            "<h3>You're in.</h3>" +
+            "<p>Want to move up? Share your link, and every brand that joins through it moves you up the list.</p>" +
+            '<div class="x-reflink"><code>' + esc(link) + '</code><button class="x-btn x-btn--sm" type="button" data-copy="' + esc(link) + '">Copy</button></div>' +
+            '<div class="x-share">' +
+            '<a class="x-btn x-btn--sm" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=' + text + '">Share on X</a>' +
+            '<a class="x-btn x-btn--sm" target="_blank" rel="noopener" href="https://www.linkedin.com/feed/?shareActive=true&text=' + text + '&url=' + url + '">LinkedIn</a>' +
+            '<a class="x-btn x-btn--sm" target="_blank" rel="noopener" href="https://wa.me/?text=' + text + '">WhatsApp</a>' +
+            "</div></div>"
+          );
+        }
+        function bindForm(form, err, onOk) {
+          form.addEventListener("submit", function (e) {
+            e.preventDefault();
+            var v = form.email.value.trim();
+            if (!EMAIL.test(v)) { err.hidden = false; form.email.setAttribute("aria-invalid", "true"); form.email.focus(); return; }
+            err.hidden = true;
+            onOk(v);
+          });
+        }
+        bindForm($("#wait-form"), $("#wait-err"), function (email) {
+          $("#wait-box").innerHTML = successHTML(email);
+        });
+        document.addEventListener("click", function (e) {
+          var b = e.target.closest("[data-copy]");
+          if (!b) return;
+          var val = b.getAttribute("data-copy");
+          var done = function () { var was = b.textContent; b.textContent = "Copied"; setTimeout(function () { b.textContent = was === "Copied" ? "Copy" : was; }, 1800); };
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(val).then(done, fallback);
+          else fallback();
+          function fallback() {
+            var ta = document.createElement("textarea");
+            ta.value = val; ta.style.position = "fixed"; ta.style.opacity = "0";
+            document.body.appendChild(ta); ta.select();
+            try { document.execCommand("copy"); done(); } catch (x) {}
+            ta.remove();
+          }
+        });
+
+        /* guess slider: log scale from 199 to 1,00,000 */
+        var MIN = 199, MAX = 100000;
+        var slider = $("#guess"), gv = $("#guess-val");
+        function fromPos(p) {
+          if (p <= 0) return MIN;
+          if (p >= 1000) return MAX;
+          var v = MIN * Math.pow(MAX / MIN, p / 1000);
+          var step = v < 1000 ? 10 : v < 10000 ? 100 : 500;
+          return Math.min(MAX, Math.max(MIN, Math.round(v / step) * step));
+        }
+        function toPos(v) { return Math.round((1000 * Math.log(v / MIN)) / Math.log(MAX / MIN)); }
+        slider.value = toPos(25000);
+        function showGuess() {
+          var v = fromPos(+slider.value);
+          gv.textContent = inr(v);
+          slider.setAttribute("aria-valuetext", inr(v));
+          return v;
+        }
+        showGuess();
+        slider.addEventListener("input", showGuess);
+        $("#guess-lock").addEventListener("click", function () {
+          var v = inr(showGuess());
+          var t = encodeURIComponent("My guess for the launch-night #1 bid: " + v + ". Who takes #1 on Boli, India's first live auction for D2C brands? boli.in");
+          $("#guess-box").innerHTML =
+            '<div class="x-ok" role="status" style="margin-top:0"><p style="margin-top:0;color:var(--x-ink)">Locked at <b class="x-gold-text">' + v +
+            "</b>. Come back on launch night to see how close you got. Just for fun.</p>" +
+            '<div class="x-share"><a class="x-btn x-btn--sm" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=' + t + '">Share my guess on X</a></div></div>';
+          slider.disabled = true;
+        });
+
+        /* founding tiles */
+        var lockSVG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>';
+        var tiles = "";
+        for (var i = 0; i < 8; i++) {
+          tiles += '<div class="x-tile"><p class="x-tile__no">No. 0' + (i + 1) + '</p><p class="x-tile__name" aria-hidden="true">Sealed brand</p>' +
+            '<span class="x-tile__lock">' + lockSVG + '</span><p class="x-tile__date">Revealed on ' + (8 + i) + " November</p></div>";
+        }
+        $("#tiles").innerHTML = tiles;
+
+        /* board */
+        /* sample data: every brand and founder is fictional */
+        var CATS = ["Skincare & Beauty", "Snacks & Food", "Fashion", "Health & Fitness", "Home", "Startups"];
+        var CITIES = ["Mumbai", "Delhi NCR", "Bengaluru", "Hyderabad", "Pune", "Jaipur", "Other"];
+        // brand, founder, city, category, one-line story, offer, code, clicks
+        var BR = {
+          kesar: ["Kesar Kosh", "Ananya Rao", "Mumbai", "Skincare & Beauty", "Saffron serums from her grandmother's kitchen notes.", "15% off", "KESAR15", 4812],
+          chatpata: ["Chatpata Lab", "Rohan Mehta", "Bengaluru", "Snacks & Food", "Baked chakli that started at a weekend flea market.", "10% off", "CHATPATA10", 3260],
+          loom: ["Loomwali", "Meera Sethi", "Jaipur", "Fashion", "Block-printed cotton from 40 artisan families.", "20% off", "LOOM20", 2975],
+          glow: ["Haldi Glow", "Riya Malhotra", "Delhi NCR", "Skincare & Beauty", "Turmeric-first skincare for humid summers.", "20% off", "GLOW20", 2410],
+          mitti: ["Mitti Ghar", "Kabir Shah", "Pune", "Home", "Terracotta planters, fired in small batches.", "12% off", "MITTI12", 1988],
+          neel: ["Neel Dhaga", "Vikram Joshi", "Mumbai", "Fashion", "Natural-indigo kurtas, dyed by hand.", "15% off", "NEEL15", 1604],
+          dum: ["Dumdaar Fit", "Arjun Nair", "Hyderabad", "Health & Fitness", "Millet protein bars made for Indian gyms.", "15% off", "DUM15", 1377],
+          phool: ["Phool Makhana Co.", "Sana Qureshi", "Delhi NCR", "Snacks & Food", "Roasted fox nuts in six Indian flavours.", "10% off", "PHOOL10", 1290],
+          hisaab: ["Hisaab Labs", "Priya Iyer", "Bengaluru", "Startups", "A billing app for neighbourhood stores.", "30% off first year", "HISAAB30", 1102],
+          sukoon: ["Sukoon Home", "Farhan Ali", "Mumbai", "Home", "Cotton bedsheets that soften with every wash.", "10% off", "SUKOON10", 846],
+          ship: ["Shipwise", "Aditya Verma", "Mumbai", "Startups", "Same-day shipping for small D2C sellers.", "20% off", "SHIP20", 690],
+          saans: ["Saans Wellness", "Neha Kulkarni", "Pune", "Health & Fitness", "Breathwork classes, ten minutes a day.", "25% off", "SAANS25", 455],
+          pahadi: ["Pahadi Pantry", "Tenzin Dorje", "Other", "Snacks & Food", "Himalayan pink-salt chips from small farms.", "10% off", "PAHADI10", 318]
+        };
+        var BOARDS = {
+          all: [["kesar", 48500], ["chatpata", 31200], ["loom", 22750], ["glow", 18400], ["mitti", 15900], ["neel", 12300], ["dum", 9999], ["phool", 8800], ["hisaab", 7450], ["sukoon", 5200], ["ship", 4200], ["saans", 2999], ["pahadi", 1499]],
+          today: [["chatpata", 6400], ["phool", 6300], ["kesar", 4800], ["glow", 4450], ["loom", 3900], ["sukoon", 3100], ["mitti", 2650], ["dum", 1999], ["neel", 1750], ["hisaab", 1450], ["ship", 899], ["saans", 499], ["pahadi", 299]],
+          daily: [["kesar", 3900], ["loom", 3500], ["dum", 2800], ["chatpata", 2200], ["neel", 1950], ["glow", 1750], ["mitti", 1200], ["hisaab", 950], ["sukoon", 800], ["phool", 650], ["saans", 499], ["ship", 399], ["pahadi", 199]]
+        };
+        var YESTERDAY = "kesar"; // yesterday's #1, so it shows as Defending #1
+        var BOARD_NAME = { all: "All-time", today: "Today", daily: "Daily" };
+        var state = { board: "all", cat: "All", city: "All" };
+        var initials = function (n) { return n.split(/\s+/).filter(function (w) { return /^[A-Za-z]/.test(w); }).slice(0, 2).map(function (w) { return w[0]; }).join("").toUpperCase(); };
+
+        $("#chips").innerHTML = ["All"].concat(CATS).map(function (c) {
+          return '<button type="button" data-cat="' + esc(c) + '" aria-pressed="' + (c === "All") + '">' + esc(c === "All" ? "All categories" : c) + "</button>";
+        }).join("");
+        $("#cities").innerHTML = ["All"].concat(CITIES).map(function (c) {
+          return '<button type="button" data-city="' + esc(c) + '" aria-pressed="' + (c === "All") + '">' + esc(c === "All" ? "All India" : c) + "</button>";
+        }).join("");
+        var PAID = '<span class="x-paid">Paid listing</span>';
+        function codeChip(b) {
+          return '<span class="x-code"><span class="x-code__off">' + esc(b.offer) + "</span><code>" + esc(b.code) + "</code>" +
+            '<button class="x-code__btn" type="button" data-copy="' + esc(b.code) + '" aria-label="Copy code ' + esc(b.code) + '">Copy</button></span>';
+        }
+        function rowsOf(board) {
+          return BOARDS[board].map(function (r) {
+            var b = BR[r[0]];
+            return { key: r[0], name: b[0], founder: b[1], city: b[2], cat: b[3], story: b[4], offer: b[5], code: b[6], clicks: b[7], bid: r[1] };
+          });
+        }
+        var clicks = function (n) { return n.toLocaleString("en-IN") + " clicks"; };
+        $("#claim-cat").innerHTML = '<option value="">Pick a category</option>' + CATS.map(function (c) { return "<option>" + esc(c) + "</option>"; }).join("");
+
+        function countUp(el, to) {
+          if (reduce) { el.textContent = inr(to); return; }
+          var t0 = performance.now(), dur = 900;
+          (function step(t) {
+            var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+            el.textContent = inr(to * e);
+            if (k < 1) requestAnimationFrame(step);
+          })(t0);
+        }
+
+        function badgeFor(b) {
+          return b.key === YESTERDAY
+            ? '<span class="x-rank-badge x-rank-badge--def">★ Defending #1</span>'
+            : '<span class="x-rank-badge">★ Ranked #1 · Today\'s #1</span>';
+        }
+
+        function render() {
+          var list = rowsOf(state.board).filter(function (b) {
+            return (state.cat === "All" || b.cat === state.cat) && (state.city === "All" || b.city === state.city);
+          });
+          var top = list[0], pod = list.slice(1, 3), rest = list.slice(3);
+          var scope = [BOARD_NAME[state.board] + " board"];
+          if (state.city !== "All") scope.push(state.city);
+          if (state.cat !== "All") scope.push(state.cat);
+          var anim = reduce ? "" : " x-in";
+
+          $("#spot").innerHTML = top
+            ? '<article class="x-spot x-shimmer' + anim + '">' +
+              '<span class="x-avatar" aria-hidden="true">' + initials(top.founder) + "</span>" +
+              "<div>" + badgeFor(top) +
+              '<p class="x-spot__founder">' + esc(top.founder) + "</p>" +
+              '<p class="x-muted">Founder, <b style="color:var(--x-ink);font-weight:500">' + esc(top.name) + "</b></p>" +
+              '<p class="x-spot__story">' + esc(top.story) + "</p>" +
+              '<div class="x-meta"><span>' + esc(top.city) + "</span><span>" + esc(top.cat) + "</span><span>" + clicks(top.clicks) + "</span>" + PAID + "</div></div>" +
+              '<div class="x-spot__side"><p class="x-eyebrow">#1 · ' + esc(scope.join(" · ")) + "</p>" +
+              '<p class="x-pod__bid x-gold-text" style="margin-top:0" data-bid="' + top.bid + '">' + inr(top.bid) + "</p>" + codeChip(top) + "</div></article>"
+            : '<div class="x-empty">No listings here yet. The first bid takes the #1 spot.</div>';
+
+          $("#podium").innerHTML = pod.map(function (b, i) {
+            return '<article class="x-pod x-pod--' + (i + 2) + anim + '" style="animation-delay:' + (80 + i * 80) + 'ms">' +
+              '<p class="x-pod__rank">' + (i === 0 ? "Silver · #2" : "Bronze · #3") + "</p>" +
+              '<div style="display:flex;align-items:center;gap:14px;margin-top:16px"><span class="x-mono" aria-hidden="true">' + initials(b.founder) + "</span>" +
+              '<div><p class="x-pod__name" style="margin-top:0">' + esc(b.founder) + '</p><p class="x-fine" style="margin-top:2px">Founder, ' + esc(b.name) + "</p></div></div>" +
+              '<p class="x-pod__tag">' + esc(b.story) + "</p>" +
+              '<div class="x-meta"><span>' + esc(b.city) + "</span><span>" + esc(b.cat) + "</span>" + PAID + "</div>" +
+              '<p class="x-pod__bid" data-bid="' + b.bid + '">' + inr(b.bid) + "</p>" +
+              '<p class="x-fine" style="margin-top:4px">' + clicks(b.clicks) + "</p>" + codeChip(b) + "</article>";
+          }).join("");
+          $("#podium").hidden = !pod.length;
+
+          $("#rows").innerHTML = rest.map(function (b, k) {
+            return '<div class="x-row' + anim + '" style="animation-delay:' + (200 + k * 60) + 'ms">' +
+              '<span class="x-row__rank">' + (k + 4) + "</span>" +
+              '<span class="x-mono" aria-hidden="true">' + initials(b.founder) + "</span>" +
+              '<div style="min-width:0"><p class="x-row__name">' + esc(b.name) + " " + PAID + "</p>" +
+              '<p class="x-row__meta">' + esc(b.founder) + " · " + esc(b.city) + " · " + esc(b.cat) + " · " + clicks(b.clicks) + "</p>" +
+              '<p class="x-row__story">' + esc(b.story) + "</p>" +
+              '<div class="x-row__deal">' + codeChip(b) + "</div></div>" +
+              '<span class="x-row__bid" data-bid="' + b.bid + '">' + inr(b.bid) + "</span>" +
+              '<a class="x-row__go" href="#board" aria-label="Visit ' + esc(b.name) + ' (sample brand, link goes live at launch)" title="Sample brand">↗</a></div>';
+          }).join("");
+          $("#rows").hidden = !rest.length;
+
+          [].forEach.call(document.querySelectorAll("#spot [data-bid], #podium [data-bid], #rows [data-bid]"), function (el) { countUp(el, +el.getAttribute("data-bid")); });
+          setAmt(BOARDS[state.board][0][1] + 100);
+          renderCats();
+        }
+
+        /* category boards */
+        function renderCats() {
+          var all = rowsOf(state.board);
+          $("#cats").innerHTML = CATS.map(function (c) {
+            var l = all.filter(function (b) { return b.cat === c; });
+            var a = l[0], n = l[1];
+            if (!a) return "";
+            return '<article class="x-cat"><p class="x-cat__name">' + esc(c) + "</p>" +
+              '<p class="x-cat__brand">' + esc(a.name) + " " + PAID + "</p>" +
+              '<p class="x-fine" style="margin-top:-4px">' + esc(a.founder) + " · " + esc(a.city) + "</p>" +
+              '<p class="x-pod__bid x-gold-text" style="margin-top:4px;font-size:26px">' + inr(a.bid) + "</p>" +
+              '<p class="x-cat__gap">' + (n ? "Next rival: " + esc(n.name) + ", " + inr(a.bid - n.bid) + " behind" : "No rival yet. The #1 spot is open.") + "</p>" +
+              '<p class="x-fine">' + BOARD_NAME[state.board] + " board</p>" +
+              '<button class="x-btn x-btn--sm" type="button" data-gocat="' + esc(c) + '">See ' + esc(c) + " board</button></article>";
+          }).join("");
+        }
+        $("#cats").addEventListener("click", function (e) {
+          var b = e.target.closest("[data-gocat]"); if (!b) return;
+          state.cat = b.getAttribute("data-gocat");
+          [].forEach.call(document.querySelectorAll("#chips button"), function (x) { x.setAttribute("aria-pressed", String(x.getAttribute("data-cat") === state.cat)); });
+          render();
+          document.getElementById("board").scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
+        });
+
+        /* deals board */
+        $("#deals-list").innerHTML = rowsOf("all").slice().sort(function (a, b) { return parseInt(b.offer, 10) - parseInt(a.offer, 10); }).map(function (b) {
+          return '<div class="x-deal"><span class="x-mono" aria-hidden="true">' + initials(b.founder) + "</span>" +
+            '<div style="min-width:0"><p class="x-row__name">' + esc(b.name) + " " + PAID + "</p>" +
+            '<p class="x-row__meta">' + esc(b.founder) + " · " + esc(b.city) + " · " + esc(b.cat) + "</p>" +
+            '<p class="x-deal__off">' + esc(b.offer) + "</p></div>" + codeChip(b) + "</div>";
+        }).join("");
+
+        /* Today's #1 reel */
+        (function () {
+          var t = rowsOf("today")[0];
+          $("#reel").innerHTML =
+            '<div class="x-reel__top"><span class="x-live">LIVE · 9 PM IST</span><span class="x-fine">@boli.in</span></div>' +
+            '<div class="x-reel__mid">' + badgeFor(t) +
+            '<span class="x-avatar" aria-hidden="true">' + initials(t.founder) + "</span>" +
+            '<p class="x-reel__name">' + esc(t.founder) + "</p>" +
+            '<p class="x-muted" style="font-size:14px">Founder, ' + esc(t.name) + " · " + esc(t.city) + "</p>" +
+            '<p class="x-reel__bid">' + inr(t.bid) + "</p>" + codeChip(t) + PAID + "</div>" +
+            '<p class="x-reel__foot">Sample data. Real boards open 16 Nov, 8 PM IST</p>';
+        })();
+
+        /* city vs city: today's total bids */
+        (function () {
+          var sum = function (city) { return rowsOf("today").filter(function (b) { return b.city === city; }).reduce(function (s, b) { return s + b.bid; }, 0); };
+          var a = sum("Bengaluru"), b = sum("Mumbai"), pa = Math.round((a / (a + b)) * 100);
+          $("#city-a").style.width = pa + "%";
+          $("#city-b").style.width = 100 - pa + "%";
+          $("#city-a-n").textContent = inr(a);
+          $("#city-b-n").textContent = inr(b);
+          $("#city-bar").setAttribute("aria-label", "Today's total bids: Bengaluru " + inr(a) + ", Mumbai " + inr(b));
+        })();
+
+        document.querySelector('[role="tablist"]').addEventListener("click", function (e) {
+          var b = e.target.closest("[data-board]"); if (!b) return;
+          state.board = b.getAttribute("data-board");
+          [].forEach.call(this.querySelectorAll("button"), function (x) { x.setAttribute("aria-selected", String(x === b)); });
+          render();
+        });
+        $("#chips").addEventListener("click", function (e) {
+          var b = e.target.closest("[data-cat]"); if (!b) return;
+          state.cat = b.getAttribute("data-cat");
+          [].forEach.call(this.querySelectorAll("button"), function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+          render();
+        });
+        $("#cities").addEventListener("click", function (e) {
+          var b = e.target.closest("[data-city]"); if (!b) return;
+          state.city = b.getAttribute("data-city");
+          [].forEach.call(this.querySelectorAll("button"), function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+          render();
+        });
+
+        /* claim panel */
+        var amt = 0, amtEl = $("#amt");
+        function setAmt(v) { amt = Math.max(199, Math.round(v) || 199); amtEl.value = inr(amt); }
+        $("#amt-minus").addEventListener("click", function () { setAmt(amt - 100); });
+        $("#amt-plus").addEventListener("click", function () { setAmt(amt + 100); });
+        amtEl.addEventListener("focus", function () { amtEl.value = String(amt); amtEl.select(); });
+        amtEl.addEventListener("blur", function () { setAmt(parseInt(amtEl.value.replace(/[^\d]/g, ""), 10)); });
+        amtEl.addEventListener("keydown", function (e) { if (e.key === "Enter") amtEl.blur(); });
+
+        var modal = $("#claim-modal"), lastFocus = null;
+        function openModal() { $("#modal-amt").textContent = inr(amt); lastFocus = document.activeElement; modal.hidden = false; document.body.style.overflow = "hidden"; var f = modal.querySelector("input"); if (f) f.focus(); }
+        function closeModal() { modal.hidden = true; document.body.style.overflow = ""; if (lastFocus) lastFocus.focus(); }
+        $("#claim-btn").addEventListener("click", openModal);
+        $("#claim-close").addEventListener("click", closeModal);
+        modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
+        document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !modal.hidden) closeModal(); });
+        bindForm($("#modal-form"), $("#modal-err"), function (email) {
+          var f = $("#modal-form");
+          f.insertAdjacentHTML("afterend", successHTML(email));
+          f.remove();
+        });
+
+        /* nav highlight */
+        var navLinks = [].slice.call(document.querySelectorAll(".x-navlinks a"));
+        function syncNav() {
+          var cur = null;
+          navLinks.forEach(function (a) { var t = document.getElementById(a.getAttribute("href").slice(1)); if (t && t.getBoundingClientRect().top < window.innerHeight * 0.35) cur = a; });
+          navLinks.forEach(function (a) { if (a === cur) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current"); });
+        }
+        window.addEventListener("scroll", syncNav, { passive: true });
+
+        render();
+        syncNav();
+      })();
+    </script>
+  </body>
+</html>
