@@ -1,5 +1,8 @@
 # Boli: India's Public Leaderboard for D2C Brands
 
+**Live:** https://boliboard.pages.dev  ·  Design: Ivory & Ink (calm ivory, ink type, gold reserved for #1)
+
+
 **Bid boldly. Hold #1.**
 
 Boli is a pay-to-rank public leaderboard where Indian D2C brands and startups pay for visibility. Every rupee and every click is shown openly. Inspired by outbid.lol, rebuilt for the Indian market.
