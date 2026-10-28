@@ -114,6 +114,7 @@
 
   /* ---------- #1 card helpers (styled in styles.css, animated by top1.js) ---------- */
   var ICON_CROWN = '<svg class="t1-crown" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3.2 8.6l4.3 3.3 4-6.1a.6.6 0 0 1 1 0l4 6.1 4.3-3.3a.6.6 0 0 1 1 .6l-1.9 8.6a1 1 0 0 1-1 .8H5.1a1 1 0 0 1-1-.8L2.2 9.2a.6.6 0 0 1 1-.6zM5.5 19.6h13a.7.7 0 0 1 0 1.4h-13a.7.7 0 0 1 0-1.4z"/></svg>';
+  var ICON_SHARE = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M8 10V2.5M5 5.2 8 2.3l3 2.9M3.5 8.5v4.2c0 .5.4.8.8.8h7.4c.4 0 .8-.3.8-.8V8.5"/></svg>';
   var ICON_ARROW = '<svg class="t1-arrow" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M3 8h9.5M8.5 4l4 4-4 4"/></svg>';
   // negative delay keeps the ring/sheen phase continuous when a card is re-rendered (all periods divide 63 s)
   function t1Phase() { return "--t1d:-" + (Date.now() % 63000) + "ms"; }
@@ -158,6 +159,92 @@
     if (biddingOpen()) $("#status-line").textContent = "Live · bidding is open";
   }
 
+  /* ---------- Today board reset (midnight IST) ---------- */
+  function msToIstMidnight() { return 864e5 - ((Date.now() + 19800000) % 864e5); }
+  function tickReset() {
+    var el = $("#board-reset-t"); if (!el || $("#board-reset").hidden) return;
+    var s = Math.floor(msToIstMidnight() / 1000);
+    el.textContent = pad2(Math.floor(s / 3600)) + ":" + pad2(Math.floor(s / 60) % 60) + ":" + pad2(s % 60);
+  }
+  function initReset() {
+    setInterval(function () {
+      tickReset();
+      // the IST day rolled over while Today was on screen: reload it so the reset shows
+      var d = istDate(0);
+      if (initReset.day && initReset.day !== d && state.board === "today") { state.cache.today = null; loadBoard({ animate: true }); }
+      initReset.day = d;
+    }, 1000);
+  }
+
+  /* ---------- shareable views: ?board=today&city=Pune&cat=Fashion&day=2026-11-17&brand=<id> ---------- */
+  var urlWanted = { day: null, brand: null };
+  function readUrl() {
+    var q;
+    try { q = new URLSearchParams(location.search); } catch (e) { return; }
+    var b = q.get("board"), city = q.get("city"), cat = q.get("cat");
+    if (b && BOARD_NAME[b]) state.board = b;
+    if (city && CITIES.indexOf(city) >= 0) state.city = city;
+    if (cat && CATS.indexOf(cat) >= 0) state.cat = cat;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(q.get("day") || "")) urlWanted.day = q.get("day");
+    if (/^[A-Za-z0-9_-]{1,64}$/.test(q.get("brand") || "")) urlWanted.brand = q.get("brand");
+    // reflect it in the tabs and chips
+    $$('[role="tab"]').forEach(function (t) {
+      var on = t.getAttribute("data-board") === state.board;
+      t.setAttribute("aria-selected", String(on)); t.tabIndex = on ? 0 : -1;
+      if (on) $("#board-panel").setAttribute("aria-labelledby", t.id);
+    });
+    [["#city-chips", state.city], ["#cat-chips", state.cat]].forEach(function (p) {
+      $$("button", $(p[0])).forEach(function (x) { x.setAttribute("aria-pressed", String(x.getAttribute("data-v") === p[1])); });
+    });
+  }
+  function resolveDay() {
+    if (!urlWanted.day || !state.days.length) return;
+    var i = state.days.indexOf(urlWanted.day);
+    if (i >= 0) state.day = i;
+    urlWanted.day = null;
+  }
+  function viewParams(brandId, board) {
+    var q = [], b = board || state.board;
+    if (b !== "all") q.push("board=" + b);
+    if (!board) {
+      if (state.city !== "All") q.push("city=" + encodeURIComponent(state.city));
+      if (state.cat !== "All") q.push("cat=" + encodeURIComponent(state.cat));
+      if (b === "daily" && state.days[state.day]) q.push("day=" + state.days[state.day]);
+    }
+    if (brandId) q.push("brand=" + encodeURIComponent(brandId));
+    return q.length ? "?" + q.join("&") : "";
+  }
+  function siteBase() {
+    var o = location.origin && location.origin !== "null" ? location.origin : "https://boliboard.pages.dev";
+    return o + location.pathname;
+  }
+  function viewUrl(brandId, board) { return siteBase() + viewParams(brandId, board) + "#board"; }
+  function writeUrl() {
+    if (!window.history || !history.replaceState || urlWanted.brand) return;
+    var next = location.pathname + viewParams() + location.hash;
+    if (next !== location.pathname + location.search + location.hash) {
+      try { history.replaceState(history.state, "", next); } catch (e) {}
+    }
+  }
+  function focusBrand() {
+    var id = urlWanted.brand; if (!id) return;
+    urlWanted.brand = null;
+    var el = null;
+    $$("#board-panel [data-key]").forEach(function (x) { if (x.getAttribute("data-key") === id) el = x; });
+    if (!el) return;
+    el.classList.add("is-linked");
+    setTimeout(function () {
+      if (el.scrollIntoView) el.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+      if (window.BoliMotion) window.BoliMotion.pulse(el, false);
+    }, reduce ? 0 : 350);
+    setTimeout(function () { el.classList.remove("is-linked"); }, 6000);
+  }
+  function copyText(v, okMsg) {
+    function fallback() { toast(v); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v).then(function () { toast(okMsg); }, fallback);
+    else fallback();
+  }
+
   /* ---------- data layer ---------- */
   function sampleDays() {
     var out = []; for (var i = 1; i <= SAMPLE.dailyCount; i++) out.push(istDate(i)); return out;
@@ -191,12 +278,13 @@
     if (sb) {
       p = (board === "daily" && (!state.days.length || opts.refreshDays) ? fetchDays().then(function (d) { state.days = d; }) : Promise.resolve())
         .then(function () {
+          resolveDay();
           if (board === "daily" && !state.days.length) return [];
           return fetchLive(board, state.days[state.day]);
         })
         .then(function (rows) {
           if (rows.length) return { rows: rows, source: "live", liveRows: rows };
-          if (board === "daily") state.days = sampleDays();
+          if (board === "daily") { state.days = sampleDays(); resolveDay(); }
           return { rows: sampleBoard(board, state.day), source: "sample", reason: "empty", liveRows: [] };
         })
         .catch(function (err) {
@@ -206,11 +294,13 @@
         });
     } else {
       if (board === "daily" && !state.days.length) state.days = sampleDays();
+      resolveDay();
       p = Promise.resolve({ rows: sampleBoard(board, state.day), source: "sample", reason: configured ? "error" : "unconfigured" });
     }
     return p.then(function (res) {
       if (board !== state.board) return; // the user switched tabs while this loaded
       applyRows(res.rows, res.source, res.reason, opts.animate, res.liveRows);
+      focusBrand();
     });
   }
 
@@ -249,6 +339,9 @@
   function visit(r, cls) {
     if (r.sample || !r.url || r.url === "#") return '<span class="' + (cls || "visit") + ' is-disabled" aria-hidden="true">Sample</span>';
     return '<a class="' + (cls || "visit") + '" href="' + esc(r.url) + '" target="_blank" rel="sponsored noopener" data-track="' + esc(r.id) + '">Visit<span class="sr-only"> ' + esc(r.name) + " (opens in a new tab)</span> ↗</a>";
+  }
+  function shareBtn(r) {
+    return '<button type="button" class="visit share-btn" data-share="' + esc(r.id) + '" aria-label="Share ' + esc(r.name) + '\'s rank">' + ICON_SHARE + '<span class="share-btn__l">Share</span></button>';
   }
   function deltaBadge(id) {
     var d = state.deltas[id];
@@ -312,7 +405,7 @@
       (r.story ? '<p class="pod__story">' + esc(r.story) + "</p>" : "") +
       '<p class="amt amt--lg" data-amt="' + r.total + '">' + inr(r.total) + "</p>" +
       '<p class="small muted">' + meta(r) + "</p>" +
-      '<div class="pod__foot">' + PAID + codeChip(r) + visit(r) + "</div>" + (top ? topCta(r) : "") + "</li>";
+      '<div class="pod__foot">' + PAID + codeChip(r) + visit(r) + shareBtn(r) + "</div>" + (top ? topCta(r) : "") + "</li>";
   }
   function rowItem(r, i) {
     return '<li class="row" data-key="' + esc(r.id) + '">' +
@@ -321,7 +414,7 @@
       '<p class="row__meta">' + (r.founder_name ? esc(r.founder_name) + " · " : "") + meta(r) + "</p>" +
       (r.story ? '<p class="row__story">' + esc(r.story) + "</p>" : "") + "</div>" +
       '<div class="row__side"><span class="amt" data-amt="' + r.total + '">' + inr(r.total) + "</span>" +
-      '<div class="row__acts">' + codeChip(r) + visit(r) + "</div></div></li>";
+      '<div class="row__acts">' + codeChip(r) + visit(r) + shareBtn(r) + "</div></div></li>";
   }
 
   function render(animate) {
@@ -350,6 +443,10 @@
     if (state.city !== "All") scope.push(state.city);
     if (state.cat !== "All") scope.push(state.cat);
     $("#board-scope").textContent = scope.join(" · ") + " · " + list.length + (list.length === 1 ? " listing" : " listings");
+
+    $("#board-reset").hidden = state.board !== "today";
+    tickReset();
+    writeUrl();
 
     // daily nav
     var dn = $("#daynav");
@@ -427,6 +524,12 @@
     $("#day-prev").addEventListener("click", function () { if (state.day < state.days.length - 1) { state.day++; loadBoard({ animate: true }); } });
     $("#day-next").addEventListener("click", function () { if (state.day > 0) { state.day--; loadBoard({ animate: true }); } });
 
+    $("#copy-view").addEventListener("click", function () {
+      var url = viewUrl();
+      if (navigator.share && window.matchMedia && window.matchMedia("(pointer: coarse)").matches) {
+        navigator.share({ title: "Boli · " + BOARD_NAME[state.board] + " board", url: url }).catch(function () {});
+      } else copyText(url, "Link to this board copied");
+    });
     $("#demo-bid").addEventListener("click", function () {
       var rows = state.rows.slice();
       if (rows.length < 2) return;
@@ -742,7 +845,7 @@
         var order = {
           id: o.order_id, code: o.order_code, paise: o.amount_paise, amount: o.amount, vpa: o.vpa, payee: o.payee_name,
           link: o.upi_link, expires: Date.parse(o.expires_at) || (Date.now() + 864e5), bid: o.bid, board: q.board, created: Date.now(),
-          status: "pending"
+          status: "pending", listing: body.listing_id || o.listing_id || null, name: body.listing ? body.listing.name : null
         };
         upiSave(order);
         syncPayButton();
@@ -854,12 +957,28 @@
           upiClear();
           toast("Payment confirmed. Welcome to the board.");
           state.cache = {};
-          if (sb) { loadBoard({ animate: true }); loadStats(); loadFeed(); }
+          if (sb) { loadBoard({ animate: true }); loadStats(); loadFeed(); offerShare(o); }
         } else upiSave(o);
       }).catch(function () { /* network blip: keep polling */ });
   }
+  // after a confirmed payment, find the paid listing on its board and offer the share card
+  function offerShare(o) {
+    var b = o.board === "today" ? "today" : "all";
+    ensureBoard(b).then(function () {
+      var hit = null, nm = String(o.name || "").trim().toLowerCase();
+      (state.cache[b] || []).forEach(function (r) {
+        if (!hit && !r.sample && ((o.listing && String(r.id) === String(o.listing)) || (nm && String(r.name).toLowerCase() === nm))) hit = r;
+      });
+      var btn = $("#upi-share");
+      if (!hit || !btn || upiCurrent !== o) return;
+      btn.setAttribute("data-share", hit.id);
+      btn.setAttribute("data-share-board", b);
+      btn.hidden = false;
+    });
+  }
   function showUpi(o) {
     upiCurrent = o;
+    var sh = $("#upi-share"); if (sh) sh.hidden = true;
     form.hidden = true;
     $("#upi-pay").hidden = false;
     $("#claim-title").textContent = "Complete your payment";
@@ -960,6 +1079,23 @@
     links.forEach(function (a) { var t = $(a.getAttribute("href")); if (t) io.observe(t); });
   }
 
+  /* ---------- read-only API for share.js ---------- */
+  window.BoliApp = {
+    info: function (id, board) {
+      board = board || state.board;
+      var rows = board === state.board ? state.rows : (state.cache[board] || []), r = null, rank = 0;
+      rows.forEach(function (x, i) { if (!r && String(x.id) === String(id)) { r = x; rank = i + 1; } });
+      if (!r) return null;
+      return {
+        id: r.id, name: r.name, rank: rank, total: r.total, city: r.city, category: r.category, offer: r.offer,
+        code: r.discount_code, sample: r.sample, board: board, boardName: BOARD_NAME[board],
+        day: board === "daily" ? state.days[state.day] : null, dayLabel: board === "daily" && state.days[state.day] ? fmtDay(state.days[state.day]) : "",
+        url: viewUrl(r.id, board === "daily" ? "all" : board), nextTop: board === "daily" ? null : nextTopPrice(board)
+      };
+    },
+    toast: toast, copy: copyText, inr: inr
+  };
+
   /* ---------- boot ---------- */
   function refreshLive() {
     if (!sb || doc.hidden) return;
@@ -994,7 +1130,7 @@
     }, function () {});
   }
   function start() {
-    initTheme(); initCountdown(); initFilters(); initClicks(); initWaitlist(); initClaim(); initNav();
+    initTheme(); initCountdown(); initFilters(); readUrl(); initReset(); initClicks(); initWaitlist(); initClaim(); initNav();
     resumeUpi(); // a UPI payment in progress (stored on this device) reopens straight away
     connect().then(function () {
       loadBoard({ animate: false });

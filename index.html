@@ -14,6 +14,18 @@
     <meta property="og:description" content="The public pay-to-rank board for Indian D2C brands. ₹1 to list. Opens 16 Nov 2026, 8 PM IST." />
     <meta property="og:url" content="https://boliboard.pages.dev" />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Boli" />
+    <meta property="og:locale" content="en_IN" />
+    <meta property="og:image" content="https://boliboard.pages.dev/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Boli, the public pay-to-rank board for Indian D2C brands" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Boli · Bid boldly. Hold #1." />
+    <meta name="twitter:description" content="The public pay-to-rank board for Indian D2C brands. ₹1 to list. Opens 16 Nov 2026, 8 PM IST." />
+    <meta name="twitter:image" content="https://boliboard.pages.dev/og.png" />
+    <link rel="canonical" href="https://boliboard.pages.dev/" />
+    <link rel="apple-touch-icon" href="/icon-180.png" />
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23ff9f1c'/%3E%3Crect x='6' y='17' width='5.5' height='9' rx='1.5' fill='%23140d00'/%3E%3Crect x='13.25' y='8' width='5.5' height='18' rx='1.5' fill='%23140d00'/%3E%3Crect x='20.5' y='13' width='5.5' height='13' rx='1.5' fill='%23140d00'/%3E%3C/svg%3E"
@@ -28,6 +40,7 @@
         document.documentElement.classList.add("js");
       })();
     </script>
+    <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "WebSite", "name": "Boli", "url": "https://boliboard.pages.dev/", "inLanguage": "en-IN", "description": "The public pay-to-rank board for Indian D2C brands."}, {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is Boli?", "acceptedAnswer": {"@type": "Answer", "text": "A public leaderboard where Indian D2C brands pay for a listing and rank by what they pay. The highest total holds the #1 spot."}}, {"@type": "Question", "name": "Is this gambling or a game?", "acceptedAnswer": {"@type": "Answer", "text": "No. You pay a fixed, disclosed amount for a public listing. There's no chance, no prize and no winnings. It's paid visibility, like an ad slot."}}, {"@type": "Question", "name": "Why would anyone pay?", "acceptedAnswer": {"@type": "Answer", "text": "Visibility. Every rank change is shown publicly, and the top spots are the first thing visitors see. Boli sells visibility only. We don't guarantee clicks, traffic, followers or sales."}}, {"@type": "Question", "name": "When does it launch?", "acceptedAnswer": {"@type": "Answer", "text": "Monday, 16 November 2026, 8 PM IST."}}, {"@type": "Question", "name": "What does it cost?", "acceptedAnswer": {"@type": "Answer", "text": "From ₹1. #1 costs at least ₹100 more than the current #1. Already listed? You only pay the difference."}}, {"@type": "Question", "name": "Do I get an invoice?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, a receipt/invoice for every payment."}}, {"@type": "Question", "name": "Can I get a refund if I'm outbid?", "acceptedAnswer": {"@type": "Answer", "text": "No. Payments are non-refundable, and you can always raise your bid. The one exception: if we remove a listing for breaking the rules, refunds are at our discretion."}}, {"@type": "Question", "name": "Is this like Product Hunt?", "acceptedAnswer": {"@type": "Answer", "text": "No votes, no hunters, no review queue. Just the bid."}}, {"@type": "Question", "name": "How do I become a Founding Brand?", "acceptedAnswer": {"@type": "Answer", "text": "Join the waitlist and mention your brand. Founding brands get their first listing free."}}, {"@type": "Question", "name": "Are the brands on the board real?", "acceptedAnswer": {"@type": "Answer", "text": "Not yet. Until launch, every brand and founder on the board is fictional sample data, and it's labelled that way."}}]}]}</script>
     <link rel="stylesheet" href="styles.css" />
     <script src="config.js" defer></script>
     <script src="qrcode.js" defer></script>
@@ -35,6 +48,7 @@
     <script src="app.js" defer></script>
     <script src="motion.js" defer></script>
     <script src="top1.js" defer></script>
+    <script src="share.js" defer></script>
   </head>
   <body>
     <a class="skip" href="#board">Skip to the board</a>
@@ -140,7 +154,11 @@
             <span id="day-label"></span>
             <button class="iconbtn" type="button" id="day-next" aria-label="Next day">›</button>
           </div>
-          <button class="btn btn--ghost btn--sm" type="button" id="demo-bid" hidden>Simulate a bid (demo)</button>
+          <p class="board__reset" id="board-reset" hidden><span class="dot dot--live" aria-hidden="true"></span>Resets at midnight IST · <span id="board-reset-t" class="mono">--:--:--</span> left</p>
+          <div class="board__tools">
+            <button class="btn btn--ghost btn--sm" type="button" id="copy-view">Share this board</button>
+            <button class="btn btn--ghost btn--sm" type="button" id="demo-bid" hidden>Simulate a bid (demo)</button>
+          </div>
         </div>
 
         <div id="board-panel" role="tabpanel" aria-labelledby="tab-all" tabindex="-1">
@@ -357,8 +375,40 @@
             <span class="upi__spin" aria-hidden="true"></span>
             <p id="upi-status-text">Waiting for payment…</p>
           </div>
+          <button type="button" class="btn btn--gold btn--block" id="upi-share" hidden>Share your new rank</button>
           <button type="button" class="btn btn--ghost btn--block" id="upi-new">Start a new bid</button>
         </section>
+      </div>
+    </div>
+
+    <!-- SHARE CARD -->
+    <div class="sharebox" id="share" role="dialog" aria-modal="true" aria-labelledby="share-title" hidden>
+      <div class="drawer__scrim" data-close-share></div>
+      <div class="sharebox__panel" tabindex="-1">
+        <div class="drawer__head">
+          <div>
+            <p class="eyebrow" id="share-kicker">Share card</p>
+            <h2 class="h3" id="share-title">Share this rank</h2>
+          </div>
+          <button class="iconbtn" type="button" data-close-share aria-label="Close">✕</button>
+        </div>
+        <div class="sharebox__body">
+          <div class="seg seg--sm" role="radiogroup" aria-label="Image size" id="share-fmt">
+            <label><input type="radio" name="share-fmt" value="post" checked /> <span>Post · 1200×630</span></label>
+            <label><input type="radio" name="share-fmt" value="story" /> <span>Story · 1080×1920</span></label>
+          </div>
+          <div class="sharebox__frame"><img class="sharebox__img" id="share-img" alt="" hidden /></div>
+          <p class="small muted" id="share-line"></p>
+          <div class="sharebox__acts">
+            <button type="button" class="btn btn--accent btn--sm" id="share-native" hidden>Share image</button>
+            <a class="btn btn--ghost btn--sm" id="share-dl" download="boli-rank.png" href="#" hidden>Download image</a>
+            <a class="btn btn--ghost btn--sm" id="share-wa" href="#" target="_blank" rel="noopener">WhatsApp</a>
+            <a class="btn btn--ghost btn--sm" id="share-li" href="#" target="_blank" rel="noopener">LinkedIn</a>
+            <a class="btn btn--ghost btn--sm" id="share-x" href="#" target="_blank" rel="noopener">X</a>
+            <button type="button" class="btn btn--ghost btn--sm" id="share-copy">Copy link</button>
+          </div>
+          <p class="fine">Post size fits LinkedIn, X and WhatsApp. Story size fits Instagram and WhatsApp status: download it, then post from your gallery.</p>
+        </div>
       </div>
     </div>
 
