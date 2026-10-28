@@ -1,0 +1,15 @@
+# Minimal Supabase CLI config for Boli. `supabase init` would generate a longer file; these keys are enough
+# for `supabase functions deploy`.
+project_id = "boliboard"
+
+# The browser calls these functions with the public anon key. They do their own validation and use the
+# service role internally, so gateway JWT verification is turned off (needed for navigator.sendBeacon,
+# which can't send an Authorization header, and for the newer non-JWT publishable keys).
+[functions.create-order]
+verify_jwt = false
+
+[functions.verify-payment]
+verify_jwt = false
+
+[functions.track-click]
+verify_jwt = false
