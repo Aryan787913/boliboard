@@ -13,3 +13,15 @@ verify_jwt = false
 
 [functions.track-click]
 verify_jwt = false
+
+[functions.create-upi-order]
+verify_jwt = false
+
+[functions.upi-status]
+verify_jwt = false
+
+[functions.upi-notify]
+verify_jwt = false
+
+[functions.admin-upi]
+verify_jwt = false

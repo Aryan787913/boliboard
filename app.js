@@ -1,7 +1,9 @@
 /*
  * Boli front end. Vanilla JS, no build step.
  * Live mode: reads public views from Supabase (anon key, RLS-protected) and pays through
- * Razorpay via the create-order / verify-payment edge functions.
+ * PAYMENT_MODE "upi" (default): create-upi-order gives a unique exact amount + upi:// link + QR, then
+ *   upi-status is polled until the payee's phone confirms it through upi-notify.
+ * PAYMENT_MODE "razorpay" (kept, off): Razorpay via the create-order / verify-payment edge functions.
  * Sample mode: when config.js is empty (or the live board is still empty), renders clearly
  * labelled fictional sample data.
  */
@@ -17,6 +19,9 @@
   var SUPABASE_CDN = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
   var RAZORPAY_CDN = "https://checkout.razorpay.com/v1/checkout.js";
   var BOARD_NAME = { all: "All-time", today: "Today", daily: "Daily" };
+  var PAYMENT_MODE = C.PAYMENT_MODE === "razorpay" ? "razorpay" : "upi";
+  var UPI = C.UPI || {};
+  var UPI_KEY = "boli-upi-order";
 
   var doc = document, root = doc.documentElement;
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -629,6 +634,10 @@
     $("#claim-wait").hidden = open;
     $("#claim-status").textContent = open ? "Bidding is open" : "Preview · bidding opens 16 Nov, 8 PM IST";
     if (!open) { btn.disabled = true; btn.textContent = "Bidding opens 16 Nov, 8 PM IST"; }
+    else if (PAYMENT_MODE === "upi") {
+      if (!configured) { btn.disabled = true; btn.textContent = "Payments not connected yet"; }
+      else { btn.disabled = false; btn.textContent = UPI.PAY_CTA || "Continue to UPI payment"; }
+    }
     else if (!sb || !C.RAZORPAY_KEY_ID) { btn.disabled = true; btn.textContent = "Payments not connected yet"; }
     else { btn.disabled = false; btn.textContent = "Pay with Razorpay"; }
   }
@@ -636,6 +645,9 @@
     lastFocus = opener || doc.activeElement;
     drawer.hidden = false;
     doc.body.classList.add("no-scroll");
+    var pending = PAYMENT_MODE === "upi" && upiLoad();
+    if (pending) { showUpi(pending); return; }
+    showForm();
     $("#claim-msg").textContent = "";
     syncPayButton();
     Promise.all([ensureBoard("all"), ensureBoard("today")]).then(function () {
@@ -647,6 +659,7 @@
     setTimeout(function () { var f = $("#c-name"); (f && !f.disabled ? f : $(".drawer__panel", drawer)).focus(); }, 30);
   }
   function closeClaim() {
+    stopUpiPoll();
     drawer.hidden = true;
     doc.body.classList.remove("no-scroll");
     if (lastFocus && lastFocus.focus) lastFocus.focus();
@@ -681,7 +694,7 @@
     if (mode === "new") { var errs = validateNew(); if (errs.length) return fail("Please check: " + errs.join(", ") + "."); }
     if (!isEmail(email)) return fail("Enter a valid contact email for your receipt.");
     if (!form.elements.terms.checked) return fail("Please accept the rules to continue.");
-    if (!sb || !C.RAZORPAY_KEY_ID) return fail("Payments aren't connected on this deployment yet.");
+    if (PAYMENT_MODE === "upi" ? !configured : (!sb || !C.RAZORPAY_KEY_ID)) return fail("Payments aren't connected on this deployment yet.");
     if (q.self && q.self.sample) return fail("That's a sample listing. Pick a live listing.");
 
     var body = { mode: mode, board: q.board, bid: q.bid, email: email };
@@ -694,6 +707,24 @@
     };
     var btn = $("#pay-btn"); btn.disabled = true; btn.textContent = "Creating order…";
     msg.className = "form-msg"; msg.textContent = "";
+    if (PAYMENT_MODE === "upi") {
+      callFn("create-upi-order", body).then(function (o) {
+        var order = {
+          id: o.order_id, code: o.order_code, paise: o.amount_paise, amount: o.amount, vpa: o.vpa, payee: o.payee_name,
+          link: o.upi_link, expires: Date.parse(o.expires_at) || (Date.now() + 864e5), bid: o.bid, board: q.board, created: Date.now(),
+          status: "pending"
+        };
+        upiSave(order);
+        syncPayButton();
+        showUpi(order);
+      }).catch(function (err) {
+        fail(err.code === "bidding_closed" ? "Bidding isn't open yet." :
+          err.code === "upi_not_configured" ? "UPI payments aren't set up yet. Please try again later." :
+          err.message || "Couldn't start the payment.");
+        syncPayButton();
+      });
+      return;
+    }
     Promise.all([callFn("create-order", body), window.Razorpay ? Promise.resolve() : loadScript(RAZORPAY_CDN)]).then(function (res) {
       var order = res[0];
       btn.textContent = "Waiting for payment…";
@@ -724,6 +755,137 @@
       syncPayButton();
     });
   }
+  /* ---------- UPI checkout ---------- */
+  var upiTimer = null, upiCurrent = null;
+  function fill(t, o) {
+    return String(t || "").replace(/\{amount\}/g, "₹" + o.amount).replace(/\{bid\}/g, inr(o.bid)).replace(/\{code\}/g, o.code || "");
+  }
+  function upiSave(o) { try { localStorage.setItem(UPI_KEY, JSON.stringify(o)); } catch (e) {} }
+  function upiClear() { try { localStorage.removeItem(UPI_KEY); } catch (e) {} }
+  function upiLoad() {
+    try {
+      var o = JSON.parse(localStorage.getItem(UPI_KEY) || "null");
+      if (!o || !o.id || !o.amount) return null;
+      if (Date.now() - (o.created || 0) > 2 * 864e5) { upiClear(); return null; }
+      return o;
+    } catch (e) { return null; }
+  }
+  function showForm() {
+    stopUpiPoll();
+    form.hidden = false;
+    $("#upi-pay").hidden = true;
+    $("#claim-title").textContent = "Claim your rank";
+  }
+  function stopUpiPoll() { if (upiTimer) { clearInterval(upiTimer); upiTimer = null; } }
+  function drawQr(link) {
+    var box = $("#upi-qr");
+    if (!window.qrcode) { box.textContent = "QR unavailable. Use the UPI ID below."; return; }
+    try {
+      var qr = window.qrcode(0, "M"); qr.addData(link); qr.make();
+      box.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 4, scalable: true });
+    } catch (e) { box.textContent = "QR unavailable. Use the UPI ID below."; }
+  }
+  function setUpiState(o) {
+    var st = $("#upi-status"), txt = $("#upi-status-text"), state = o.status;
+    if (state === "pending" && o.expires && Date.now() > o.expires) state = "expired";
+    st.setAttribute("data-state", state);
+    var paying = state === "pending";
+    $("#upi-app").hidden = !paying;
+    $("#upi-qr-wrap").hidden = !paying;
+    $(".upi__vpa").hidden = !paying;
+    $("#upi-note").hidden = !paying;
+    if (state === "paid") {
+      txt.textContent = fill(UPI.SUCCESS || "Payment received. Your listing is live at {bid}.", o);
+      $("#claim-title").textContent = "You're on the board";
+    } else if (state === "expired") {
+      txt.textContent = fill(UPI.EXPIRED || "This payment window has closed. Order {code}.", o);
+    } else if (state === "failed") {
+      txt.textContent = fill(UPI.FAILED || "This order was cancelled. Order {code}.", o);
+    } else {
+      txt.textContent = UPI.WAITING || "Waiting for payment… confirms automatically, can take a few minutes.";
+    }
+    return state;
+  }
+  function pollUpi() {
+    var o = upiCurrent; if (!o) return;
+    if (doc.hidden && upiTimer) return; // checked again on visibilitychange
+    fetch(fnUrl("upi-status") + "?id=" + encodeURIComponent(o.id), { cache: "no-store" })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; }); })
+      .then(function (res) {
+        if (upiCurrent !== o) return;
+        if (res.status === 404) { o.status = "failed"; }
+        else if (res.ok && res.j && res.j.status) { o.status = res.j.status; }
+        else return;
+        var st = setUpiState(o);
+        if (st === "pending") { upiSave(o); return; }
+        stopUpiPoll();
+        if (st === "paid") {
+          upiClear();
+          toast("Payment confirmed. Welcome to the board.");
+          state.cache = {};
+          if (sb) { loadBoard({ animate: true }); loadStats(); loadFeed(); }
+        } else upiSave(o);
+      }).catch(function () { /* network blip: keep polling */ });
+  }
+  function showUpi(o) {
+    upiCurrent = o;
+    form.hidden = true;
+    $("#upi-pay").hidden = false;
+    $("#claim-title").textContent = "Complete your payment";
+    $("#upi-code").textContent = o.code || "—";
+    $("#upi-headline").textContent = fill(UPI.HEADLINE || "Pay exactly {amount}", o);
+    $("#upi-note").textContent = UPI.EXACT_NOTE || "";
+    var app = $("#upi-app");
+    app.textContent = UPI.APP_BUTTON || "Pay with UPI app";
+    app.setAttribute("href", o.link);
+    $("#upi-qr-hint").textContent = UPI.QR_HINT || "";
+    $("#upi-vpa-label").textContent = UPI.VPA_LABEL || "Or pay to this UPI ID";
+    $("#upi-vpa").textContent = o.vpa || "—";
+    $("#upi-new").textContent = UPI.NEW_BID || "Start a new bid";
+    var touch = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    $("#upi-pay").classList.toggle("upi--touch", !!touch);
+    $("#upi-qr-wrap").open = !touch;
+    drawQr(o.link);
+    var state = setUpiState(o);
+    stopUpiPoll();
+    if (state === "pending") {
+      pollUpi();
+      upiTimer = setInterval(pollUpi, Math.max(2000, Number(UPI.POLL_MS) || 4000));
+    }
+  }
+  function initUpi() {
+    $("#upi-copy").addEventListener("click", function () {
+      var v = $("#upi-vpa").textContent, b = this;
+      function done() { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1500); }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v).then(done, function () { toast(v); });
+      else {
+        var r = doc.createRange(); r.selectNodeContents($("#upi-vpa"));
+        var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+        try { doc.execCommand("copy"); done(); } catch (e) { toast(v); }
+      }
+    });
+    $("#upi-new").addEventListener("click", function () {
+      var o = upiCurrent;
+      if (o && setUpiState(o) === "pending" && !window.confirm("Start a new bid? If you've already paid " + "₹" + o.amount + ", stay here: it will confirm automatically.")) return;
+      upiCurrent = null; upiClear(); showForm(); syncPayButton();
+      $("#claim-msg").textContent = "";
+      Promise.all([ensureBoard("all"), ensureBoard("today")]).then(function () { syncMode(); });
+    });
+    doc.addEventListener("visibilitychange", function () { if (!doc.hidden && upiCurrent && upiTimer) pollUpi(); });
+    var note = $("#pay-note"), notes = C.PAYMENT_NOTE || {};
+    if (note && notes[PAYMENT_MODE]) note.textContent = notes[PAYMENT_MODE];
+  }
+  function resumeUpi() {
+    if (PAYMENT_MODE !== "upi" || !configured) return;
+    var o = upiLoad();
+    if (!o || o.status !== "pending") return;
+    if (o.expires && Date.now() > o.expires) return;
+    lastFocus = doc.activeElement;
+    drawer.hidden = false;
+    doc.body.classList.add("no-scroll");
+    showUpi(o);
+  }
+
   function initClaim() {
     drawer = $("#claim"); form = $("#claim-form");
     $("#c-cat").innerHTML = '<option value="">Pick a category</option>' + CATS.map(function (c) { return '<option>' + esc(c) + "</option>"; }).join("");
@@ -738,6 +900,7 @@
     $("#q-list").addEventListener("click", function () { var q = computeQuote(); setBid(q.mode === "raise" ? Math.max(MIN_BID, q.current + 1) : MIN_BID); });
     $("#q-top").addEventListener("click", function () { var q = computeQuote(); setBid(q.top ? q.top.total + TOP_STEP : MIN_BID); });
     form.addEventListener("submit", submitClaim);
+    initUpi();
     drawer.addEventListener("keydown", function (e) {
       if (e.key === "Escape") { e.preventDefault(); closeClaim(); return; }
       if (e.key !== "Tab") return;
@@ -781,6 +944,7 @@
   }
   function start() {
     initTheme(); initCountdown(); initFilters(); initClicks(); initWaitlist(); initClaim(); initNav();
+    resumeUpi(); // a UPI payment in progress (stored on this device) reopens straight away
     connect().then(function () {
       loadBoard({ animate: false });
       loadStats(); loadFeed(); trackVisit();

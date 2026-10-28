@@ -70,6 +70,22 @@ The site works without any keys: it renders sample data, the claim drawer previe
 2. **Account & Settings → API Keys → Generate Test Key.** The Key Id goes into `config.js` and the function secrets; the Key Secret goes only into the function secrets.
 3. Test card and UPI details: https://razorpay.com/docs/payments/payments/test-card-details/
 
+### 2b. UPI payments (active, `PAYMENT_MODE: "upi"`)
+
+Direct UPI to your own VPA, confirmed automatically from your phone's payment notifications. Razorpay code is
+kept and switches back on with `PAYMENT_MODE: "razorpay"` in `config.js`.
+
+- `create-upi-order`: validates the bid like `create-order`, reserves a unique payable amount (charge + random
+  1-99 paise, unique among open orders for 24h), returns the exact amount, VPA, `upi://pay` link. 503 `UPI not configured`
+  until the `UPI_VPA` secret is set. The board is credited the whole-rupee charge; the paise only tag the payment.
+- `upi-status?id=`: returns only the order status (`pending | paid | expired | failed`); the checkout polls it every 4 s.
+- `upi-notify`: webhook for MacroDroid (`x-boli-notify-token` = `NOTIFY_TOKEN`). Ignores debits/requests, parses the
+  credited amount, marks the single matching pending order paid and activates the listing. Anything else lands in
+  `upi_unmatched`. See `MACRODROID_SETUP.md`.
+- `admin-upi` + `admin.html` (unlinked): list pending orders and unmatched notifications, Approve / Reject. Uses the same token.
+- Secrets: `UPI_VPA` (your UPI ID, e.g. `name@okaxis`), `UPI_PAYEE_NAME` (`Boli`), `NOTIFY_TOKEN` (32 hex).
+- SQL: the "Migration 2026-10-28" block at the end of `supabase/schema.sql`.
+
 ### 3. Fill `config.js`
 ```js
 window.BOLI_CONFIG = {

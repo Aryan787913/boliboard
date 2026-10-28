@@ -414,3 +414,29 @@ main > section.wrap[aria-label="Public stats"] { margin-top: 48px; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* ---------- UPI checkout ---------- */
+.upi { display: grid; gap: 14px; }
+.upi__amt { font-size: clamp(1.9rem, 6vw, 2.4rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.upi__qr { border: 1px solid var(--line-2); border-radius: 14px; padding: 12px 14px; background: var(--surface-2); }
+.upi__qr summary { cursor: pointer; font-weight: 650; color: var(--muted); }
+.upi__qr[open] summary { margin-bottom: 10px; }
+.upi__qrbox { width: min(240px, 70vw); margin: 0 auto; background: #fff; border-radius: 10px; padding: 6px; }
+.upi__qrbox svg { display: block; width: 100%; height: auto; }
+.upi__qr .small { text-align: center; margin-top: 8px; }
+.upi__vparow { display: flex; align-items: center; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+.upi__vparow code { font-family: var(--mono, ui-monospace, monospace); font-size: 1rem; padding: 8px 12px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); word-break: break-all; }
+.upi__status { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line-2); font-weight: 600; }
+.upi__status p { margin: 0; }
+.upi__spin { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line-2); border-top-color: var(--accent); animation: upi-spin 0.9s linear infinite; }
+.upi__status[data-state="paid"] { border-color: var(--up); color: var(--up); }
+.upi__status[data-state="expired"], .upi__status[data-state="failed"] { border-color: var(--down); color: var(--down); }
+.upi__status:not([data-state="pending"]) .upi__spin { display: none; }
+@keyframes upi-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .upi__spin { animation-duration: 2.4s; } }
+/* desktop: the QR is the main path, the app button is secondary */
+.upi:not(.upi--touch) #upi-app { order: 4; background: transparent; color: var(--text); border: 1px solid var(--line-2); box-shadow: none; }
+.upi:not(.upi--touch) .upi__qr { order: 3; }
+.upi:not(.upi--touch) .upi__vpa { order: 5; }
+.upi:not(.upi--touch) .upi__status { order: 6; }
+.upi:not(.upi--touch) #upi-new { order: 7; }

@@ -9,8 +9,8 @@ export function corsHeaders(req: Request): Record<string, string> {
   const allow = allowed.length === 0 ? "*" : allowed.includes(origin) ? origin : allowed[0];
   return {
     "Access-Control-Allow-Origin": allow,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-boli-notify-token",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };
@@ -27,9 +27,9 @@ export function fail(req: Request, status: number, error: string, message: strin
   return json(req, status, { error, message, ...extra });
 }
 
-export function preflight(req: Request): Response | null {
+export function preflight(req: Request, methods: string[] = ["POST"]): Response | null {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
-  if (req.method !== "POST") return fail(req, 405, "method_not_allowed", "Use POST.");
+  if (!methods.includes(req.method)) return fail(req, 405, "method_not_allowed", `Use ${methods.join(" or ")}.`);
   return null;
 }
 

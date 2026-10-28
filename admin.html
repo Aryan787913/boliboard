@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en-IN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Boli · UPI admin</title>
+    <style>
+      :root { color-scheme: dark light; --bg: #0b0c10; --card: #14161e; --line: rgba(255,255,255,.12); --text: #f4f1ea; --muted: #a6aab6; --ok: #2bd9a4; --bad: #ff6b81; --accent: #ff9f1c; }
+      @media (prefers-color-scheme: light) { :root { --bg: #f7f5f0; --card: #fff; --line: rgba(0,0,0,.12); --text: #121318; --muted: #555a66; --ok: #0b7a58; --bad: #c0233c; } }
+      * { box-sizing: border-box; }
+      body { margin: 0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+      main { max-width: 760px; margin: 0 auto; padding: 16px 14px 60px; }
+      h1 { font-size: 1.3rem; margin: 6px 0 14px; }
+      h2 { font-size: 1.05rem; margin: 26px 0 10px; display: flex; justify-content: space-between; align-items: center; }
+      .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+      .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .amt { font-size: 1.35rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+      .muted { color: var(--muted); font-size: .86rem; }
+      .tag { font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); text-transform: uppercase; letter-spacing: .04em; }
+      .tag.expired, .tag.no_amount, .tag.ambiguous { color: var(--bad); border-color: var(--bad); }
+      button, input, select { font: inherit; }
+      input, select { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--text); min-width: 0; }
+      input { flex: 1; }
+      button { min-height: 42px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--text); font-weight: 700; cursor: pointer; }
+      .ok { background: var(--ok); border-color: var(--ok); color: #04140e; }
+      .bad { color: var(--bad); border-color: var(--bad); }
+      .primary { background: var(--accent); border-color: var(--accent); color: #140d00; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 8px 0; font: .9rem/1.4 ui-monospace, Menlo, Consolas, monospace; }
+      #msg { min-height: 1.4em; font-weight: 600; }
+      #msg.err { color: var(--bad); } #msg.okm { color: var(--ok); }
+      .actions { margin-top: 10px; }
+    </style>
+    <script src="config.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Boli · UPI payments</h1>
+      <div class="card" id="login">
+        <label class="muted" for="tok">Admin token (same as the phone notify token). Saved on this device only.</label>
+        <div class="row" style="margin-top:8px">
+          <input id="tok" type="password" autocomplete="off" spellcheck="false" />
+          <button class="primary" id="save">Save</button>
+          <button id="forget">Forget</button>
+        </div>
+      </div>
+      <p id="msg" role="status" aria-live="polite"></p>
+
+      <h2>Pending orders <button id="refresh">Refresh</button></h2>
+      <div id="pending"><p class="muted">—</p></div>
+
+      <h2>Unmatched notifications</h2>
+      <div id="unmatched"><p class="muted">—</p></div>
+      <p class="muted">Approve only after checking the money arrived in your UPI app. Pending orders also show expired ones from the last 3 days.</p>
+    </main>
+    <script>
+      (function () {
+        "use strict";
+        var C = window.BOLI_CONFIG || {};
+        var FN = String(C.SUPABASE_URL || "").replace(/\/+$/, "") + "/functions/v1/admin-upi";
+        var KEY = "boli-admin-token";
+        var $ = function (s) { return document.querySelector(s); };
+        var pendingRows = [];
+        function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+        function rs(p) { return p == null ? "—" : "₹" + Math.floor(p / 100).toLocaleString("en-IN") + "." + String(p % 100).padStart(2, "0"); }
+        function when(t) { return t ? new Date(t).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) + " IST" : ""; }
+        function token() { try { return localStorage.getItem(KEY) || ""; } catch (e) { return ""; } }
+        function say(t, cls) { var m = $("#msg"); m.textContent = t || ""; m.className = cls || ""; }
+        function api(body) {
+          return fetch(FN, { method: "POST", headers: { "Content-Type": "application/json", "x-boli-notify-token": token() }, body: JSON.stringify(body) })
+            .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.message || ("HTTP " + r.status)); return j; }); });
+        }
+        function render(d) {
+          pendingRows = d.pending || [];
+          $("#pending").innerHTML = pendingRows.length ? pendingRows.map(function (p) {
+            var l = p.listings || {};
+            return '<div class="card"><div class="row"><span class="amt">' + rs(p.amount_paise) + '</span>' +
+              '<span class="tag ' + esc(p.status) + '">' + esc(p.status) + '</span><span class="tag">' + esc(p.order_code) + '</span></div>' +
+              '<div class="muted">' + esc(l.name || "listing") + ' · ' + (p.board === "today" ? "Today" : "All-time") + ' board · credits ₹' + esc(p.amount) +
+              ' (total ₹' + esc(p.bid_total) + ')<br>' + esc(l.contact_email || "") + ' · created ' + esc(when(p.created_at)) + '</div>' +
+              '<div class="row actions"><button class="ok" data-approve="' + esc(p.id) + '">Approve</button>' +
+              '<button class="bad" data-reject="' + esc(p.id) + '">Reject</button></div></div>';
+          }).join("") : '<p class="muted">No pending orders.</p>';
+
+          var un = d.unmatched || [];
+          $("#unmatched").innerHTML = un.length ? un.map(function (u) {
+            var opts = pendingRows.map(function (p) {
+              var same = p.amount_paise === u.amount_paise;
+              return '<option value="' + esc(p.id) + '"' + (same ? " selected" : "") + '>' + rs(p.amount_paise) + ' · ' + esc(p.order_code) + ' · ' + esc((p.listings || {}).name || "") + '</option>';
+            }).join("");
+            return '<div class="card"><div class="row"><span class="amt">' + rs(u.amount_paise) + '</span><span class="tag ' + esc(u.reason) + '">' + esc(String(u.reason).replace("_", " ")) + '</span>' +
+              '<span class="muted">' + esc(u.app) + ' · ' + esc(when(u.created_at)) + '</span></div>' +
+              '<pre>' + esc(u.title) + '\n' + esc(u.body) + '</pre>' +
+              '<div class="row actions">' + (pendingRows.length ? '<select data-for="' + esc(u.id) + '"><option value="">Match to order…</option>' + opts + '</select>' +
+              '<button class="ok" data-match="' + esc(u.id) + '">Approve</button>' : '') +
+              '<button class="bad" data-dismiss="' + esc(u.id) + '">Dismiss</button></div></div>';
+          }).join("") : '<p class="muted">Nothing to review.</p>';
+        }
+        function load() {
+          if (!token()) { say("Enter the admin token first.", "err"); return; }
+          say("Loading…");
+          api({ action: "list" }).then(function (d) { render(d); say("Updated " + when(new Date().toISOString()), "okm"); })
+            .catch(function (e) { say(e.message, "err"); });
+        }
+        function act(body, label) {
+          say(label + "…");
+          api(body).then(function () { say(label + " done.", "okm"); load(); }).catch(function (e) { say(e.message, "err"); });
+        }
+        document.addEventListener("click", function (e) {
+          var t = e.target.closest("button"); if (!t) return;
+          if (t.id === "save") { try { localStorage.setItem(KEY, $("#tok").value.trim()); } catch (x) {} $("#tok").value = ""; load(); }
+          else if (t.id === "forget") { try { localStorage.removeItem(KEY); } catch (x) {} say("Token removed from this device."); }
+          else if (t.id === "refresh") load();
+          else if (t.dataset.approve) { if (confirm("Mark this order PAID and put the listing live? Only if the money arrived.")) act({ action: "approve", payment_id: t.dataset.approve }, "Approve"); }
+          else if (t.dataset.reject) { if (confirm("Reject this order? The listing stays hidden.")) act({ action: "reject", payment_id: t.dataset.reject }, "Reject"); }
+          else if (t.dataset.match) {
+            var sel = document.querySelector('select[data-for="' + t.dataset.match + '"]');
+            if (!sel || !sel.value) { say("Pick the order this payment belongs to.", "err"); return; }
+            act({ action: "approve", payment_id: sel.value, unmatched_id: Number(t.dataset.match) }, "Approve");
+          }
+          else if (t.dataset.dismiss) act({ action: "dismiss", unmatched_id: Number(t.dataset.dismiss) }, "Dismiss");
+        });
+        if (token()) { $("#tok").placeholder = "Saved on this device"; load(); }
+        setInterval(function () { if (token() && !document.hidden) load(); }, 30000);
+      })();
+    </script>
+  </body>
+</html>

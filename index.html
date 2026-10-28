@@ -30,6 +30,7 @@
     </script>
     <link rel="stylesheet" href="styles.css" />
     <script src="config.js" defer></script>
+    <script src="qrcode.js" defer></script>
     <script src="sample-data.js" defer></script>
     <script src="app.js" defer></script>
   </head>
@@ -189,7 +190,7 @@
           <li><strong>Indian D2C brands only.</strong> A brand website or Instagram handle you own. Valid business details (GST or company info) required.</li>
           <li><strong>Not allowed:</strong> adult content; betting or real-money gaming; alcohol, tobacco and vapes; drugs; weapons; crypto or investment schemes; MLM; medical cure claims; political or religious content; hate, caste or communal content; counterfeit goods; misleading claims; chat or invite links, URL shorteners and tracking parameters.</li>
           <li><strong>Removals.</strong> We can remove any listing that breaks these rules. Removed listings are refunded at our discretion.</li>
-          <li><strong>Payments</strong> via UPI, cards and netbanking (Razorpay). A completed payment claims the rank. Receipt/invoice for every payment. Payments are otherwise non-refundable.</li>
+          <li><strong>Payments</strong> <span id="pay-note">via UPI (any UPI app). Pay the exact amount shown; it confirms automatically. A confirmed payment claims the rank. Receipt for every payment. Payments are otherwise non-refundable.</span></li>
           <li><strong>Paid listing, always labelled.</strong> Every listing shows a “Paid listing” tag. Ranks are bought, not earned.</li>
           <li><strong>Visibility only.</strong> Boli sells visibility only. We don't guarantee clicks, traffic, followers or sales.</li>
           <li><strong>Rivalry posts.</strong> We only tag brands that are listed and have opted in to rivalry posts. No mocking or disparaging any brand.</li>
@@ -312,7 +313,7 @@
 
           <label class="check"><input type="checkbox" name="terms" required /> <span>I accept the rules. A bid buys a paid listing, nothing more. Payments are non-refundable.</span></label>
 
-          <button class="btn btn--accent btn--block" type="submit" id="pay-btn">Pay with Razorpay</button>
+          <button class="btn btn--accent btn--block" type="submit" id="pay-btn">Continue to payment</button>
           <p class="form-msg" id="claim-msg" role="status" aria-live="polite"></p>
 
           <div class="drawer__wait" id="claim-wait" hidden>
@@ -326,6 +327,31 @@
           </div>
           <p class="fine">Boli sells visibility only. We don't guarantee clicks, traffic, followers or sales. Receipt/invoice for every payment. Every listing is tagged Paid listing.</p>
         </form>
+
+        <!-- UPI checkout (PAYMENT_MODE = "upi") -->
+        <section class="drawer__body upi" id="upi-pay" hidden aria-live="polite">
+          <p class="eyebrow">UPI payment · order <span id="upi-code">—</span></p>
+          <h3 class="upi__amt" id="upi-headline">Pay exactly ₹—</h3>
+          <p class="small muted" id="upi-note"></p>
+          <a class="btn btn--accent btn--block" id="upi-app" href="#" rel="nofollow">Pay with UPI app</a>
+          <details class="upi__qr" id="upi-qr-wrap">
+            <summary>Show QR code</summary>
+            <div class="upi__qrbox" id="upi-qr" role="img" aria-label="UPI payment QR code"></div>
+            <p class="small muted" id="upi-qr-hint"></p>
+          </details>
+          <div class="upi__vpa">
+            <span class="label" id="upi-vpa-label">Or pay to this UPI ID</span>
+            <div class="upi__vparow">
+              <code id="upi-vpa">—</code>
+              <button type="button" class="chip" id="upi-copy">Copy</button>
+            </div>
+          </div>
+          <div class="upi__status" id="upi-status" data-state="pending">
+            <span class="upi__spin" aria-hidden="true"></span>
+            <p id="upi-status-text">Waiting for payment…</p>
+          </div>
+          <button type="button" class="btn btn--ghost btn--block" id="upi-new">Start a new bid</button>
+        </section>
       </div>
     </div>
 
