@@ -12,7 +12,7 @@
   var SAMPLE = window.BOLI_SAMPLE || { board: function () { return []; }, dailyCount: 0, activity: [] };
   var CATS = ["Skincare & Beauty", "Snacks & Food", "Fashion", "Health & Fitness", "Home", "Startups"];
   var CITIES = ["Mumbai", "Delhi NCR", "Bengaluru", "Hyderabad", "Pune", "Jaipur", "Other"];
-  var MIN_BID = 199, TOP_STEP = 100;
+  var MIN_BID = (C.MIN_BID && C.MIN_BID >= 1) ? Math.floor(C.MIN_BID) : 199, TOP_STEP = 100;
   var LAUNCH = Date.parse(C.LAUNCH_AT || "2026-11-16T20:00:00+05:30");
   var SUPABASE_CDN = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
   var RAZORPAY_CDN = "https://checkout.razorpay.com/v1/checkout.js";
@@ -254,8 +254,8 @@
     var el = $("#hero-top");
     if (!top) {
       el.innerHTML = '<div class="topcard__in topcard--open"><p class="crown">#1 · All-time</p><h3 class="topcard__name">The #1 spot is open.</h3>' +
-        '<p class="muted">The first paid listing takes it. ₹199 is all it costs to list.</p>' +
-        '<button class="btn btn--accent" type="button" data-open-claim="top">Claim #1 for ₹199</button></div>';
+        '<p class="muted">The first paid listing takes it. ₹' + MIN_BID + ' is all it costs to list.</p>' +
+        '<button class="btn btn--accent" type="button" data-open-claim="top">Claim #1 for ₹' + MIN_BID + '</button></div>';
       return;
     }
     el.innerHTML = '<article class="topcard__in" data-key="hero">' +
@@ -309,7 +309,7 @@
     empty.hidden = !!list.length;
     if (!list.length) {
       empty.innerHTML = "<p><strong>No listings here yet.</strong> The first paid listing on this board takes #1.</p>" +
-        '<button class="btn btn--accent btn--sm" type="button" data-open-claim="empty">Claim #1 for ₹199</button>';
+        '<button class="btn btn--accent btn--sm" type="button" data-open-claim="empty">Claim #1 for ₹' + MIN_BID + '</button>';
     }
 
     var scope = [BOARD_NAME[state.board] + " board"];
@@ -428,7 +428,7 @@
       setStat("revenue", 0);
       setStat("listings", 0, num);
       setStat("nextTop", MIN_BID);
-      $("#stats-note").textContent = "Real numbers, not the sample board: nothing has been sold yet, so revenue and listings are zero and ₹199 takes #1. Visitor counts start once the live database is connected.";
+      $("#stats-note").textContent = "Real numbers, not the sample board: nothing has been sold yet, so revenue and listings are zero and ₹" + MIN_BID + " takes #1. Visitor counts start once the live database is connected.";
       return Promise.resolve();
     }
     return sb.from("public_stats").select("*").maybeSingle().then(function (res) {
@@ -512,6 +512,9 @@
     });
   }
 
+  /* ---------- min price text ---------- */
+  Array.prototype.forEach.call(document.querySelectorAll("[data-min-bid]"), function (el) { el.textContent = String(MIN_BID); });
+
   /* ---------- waitlist ---------- */
   function joinWaitlist(email, brand) {
     if (!sb) return Promise.resolve({ preview: true });
@@ -577,7 +580,7 @@
     if (p.err) { q.err = p.err; return q; }
     var bid = q.bid = p.n;
     if (mode === "raise" && !selfId) q.err = "Pick your listing.";
-    else if (bid < MIN_BID) q.err = "Minimum is ₹199.";
+    else if (bid < MIN_BID) q.err = "Minimum is ₹" + MIN_BID + ".";
     else if (bid <= current) q.err = "Your total here is already " + inr(current) + ". Enter a higher total.";
     else if (top && !selfIsTop && bid > top.total && bid < top.total + TOP_STEP)
       q.err = "To pass #1 you need at least " + inr(top.total + TOP_STEP) + ". At " + inr(top.total) + " or less you list just below.";

@@ -76,7 +76,7 @@ create table if not exists public.payments (
   listing_id          uuid        not null references public.listings(id) on delete restrict,
   board               text        not null check (board in ('all','today')),
   amount              integer     not null check (amount >= 1),          -- rupees actually charged (the difference)
-  bid_total           integer     not null check (bid_total >= 199),     -- the board total the bidder asked for
+  bid_total           integer     not null check (bid_total >= 1),     -- the board total the bidder asked for
   currency            text        not null default 'INR' check (currency = 'INR'),
   razorpay_order_id   text        not null unique,
   razorpay_payment_id text        unique,

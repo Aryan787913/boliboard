@@ -60,7 +60,9 @@ Deno.serve(async (req) => {
   }
 
   // Pricing rules (whole rupees, >= ₹199, #1 needs current #1 + ₹100, raises charge the difference)
-  const q = quote({ bid: body.bid, currentTotal, top, listingId, maxBid });
+  const minEnv = Number(Deno.env.get("MIN_BID_RUPEES"));
+  const minBid = Number.isInteger(minEnv) && minEnv >= 1 ? minEnv : undefined;
+  const q = quote({ bid: body.bid, currentTotal, top, listingId, maxBid, minBid });
   if (!q.ok) return fail(req, 422, q.error, q.message, q.minForTop ? { min_for_top: q.minForTop } : {});
 
   // Create the listing row only after the price checks pass. It stays unapproved (invisible)

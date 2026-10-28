@@ -6,12 +6,12 @@
     <title>Boli · The public pay-to-rank board for Indian D2C brands</title>
     <meta
       name="description"
-      content="A public leaderboard where Indian D2C brands pay for a listing and rank by what they pay. ₹199 to list. ₹100 over #1 takes the top spot. Opens Monday 16 November 2026, 8 PM IST."
+      content="A public leaderboard where Indian D2C brands pay for a listing and rank by what they pay. ₹1 to list. ₹100 over #1 takes the top spot. Opens Monday 16 November 2026, 8 PM IST."
     />
     <meta name="theme-color" content="#0b0c10" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#f7f5f0" media="(prefers-color-scheme: light)" />
     <meta property="og:title" content="Boli · Bid boldly. Hold #1." />
-    <meta property="og:description" content="The public pay-to-rank board for Indian D2C brands. ₹199 to list. Opens 16 Nov 2026, 8 PM IST." />
+    <meta property="og:description" content="The public pay-to-rank board for Indian D2C brands. ₹1 to list. Opens 16 Nov 2026, 8 PM IST." />
     <meta property="og:url" content="https://boliboard.pages.dev" />
     <meta property="og:type" content="website" />
     <link
@@ -70,7 +70,7 @@
           <p class="eyebrow"><span class="dot dot--live" aria-hidden="true"></span><span id="status-line">Pre-launch · bidding opens Mon 16 Nov, 8 PM IST</span></p>
           <h1 id="hero-title" class="display">Bid boldly.<br /><span class="accent-text">Hold #1.</span></h1>
           <p class="lede">
-            A public pay-to-rank board for Indian D2C brands. <strong>₹199</strong> puts your brand on the board.
+            A public pay-to-rank board for Indian D2C brands. <strong>₹<span data-min-bid>199</span></strong> puts your brand on the board.
             <strong>₹100 over the current #1</strong> takes the top spot. Every rupee and every click, shown in the open.
           </p>
 
@@ -163,7 +163,7 @@
         <h2 id="how-title" class="h2">Three steps. No review queue.</h2>
         <ol class="steps">
           <li class="step"><span class="step__n">01</span><h3>Add your brand</h3><p>Your website or Instagram handle, a category, your city, and a discount code for shoppers.</p></li>
-          <li class="step"><span class="step__n">02</span><h3>Place your bid</h3><p>Minimum ₹199, in whole rupees. To take #1, bid at least ₹100 more than the current #1.</p></li>
+          <li class="step"><span class="step__n">02</span><h3>Place your bid</h3><p>Minimum ₹<span data-min-bid>199</span>, in whole rupees. To take #1, bid at least ₹100 more than the current #1.</p></li>
           <li class="step"><span class="step__n">03</span><h3>Hold your spot</h3><p>Outbid? Raise on the same listing. Checkout only charges the difference.</p></li>
         </ol>
         <div class="math card">
@@ -183,7 +183,7 @@
         <h2 id="rules-title" class="h2">Rank is what you pay. Nothing else.</h2>
         <ol class="rules">
           <li><strong>Three boards.</strong> All-time is the total ever paid and never expires. Today resets at midnight IST. Daily is one board per day, archived. Each board can be viewed by city and by category.</li>
-          <li><strong>New listings start at ₹199</strong>, in whole rupees.</li>
+          <li><strong>New listings start at ₹<span data-min-bid>199</span></strong>, in whole rupees.</li>
           <li><strong>Taking #1 costs at least ₹100 more than the current #1.</strong> Paying less still lists you at whatever rank that amount reaches. Equal amounts: the earlier listing ranks higher.</li>
           <li><strong>Already listed?</strong> Bid again on the same listing. Checkout only charges the difference.</li>
           <li><strong>Indian D2C brands only.</strong> A brand website or Instagram handle you own. Valid business details (GST or company info) required.</li>
@@ -210,7 +210,7 @@
           <details><summary>Is this gambling or a game?</summary><p>No. You pay a fixed, disclosed amount for a public listing. There's no chance, no prize and no winnings. It's paid visibility, like an ad slot.</p></details>
           <details><summary>Why would anyone pay?</summary><p>Visibility. Every rank change is shown publicly, and the top spots are the first thing visitors see. Boli sells visibility only. We don't guarantee clicks, traffic, followers or sales.</p></details>
           <details><summary>When does it launch?</summary><p>Monday, 16 November 2026, 8 PM IST.</p></details>
-          <details><summary>What does it cost?</summary><p>From ₹199. #1 costs at least ₹100 more than the current #1. Already listed? You only pay the difference.</p></details>
+          <details><summary>What does it cost?</summary><p>From ₹<span data-min-bid>199</span>. #1 costs at least ₹100 more than the current #1. Already listed? You only pay the difference.</p></details>
           <details><summary>Do I get an invoice?</summary><p>Yes, a receipt/invoice for every payment.</p></details>
           <details><summary>Can I get a refund if I'm outbid?</summary><p>No. Payments are non-refundable, and you can always raise your bid. The one exception: if we remove a listing for breaking the rules, refunds are at our discretion.</p></details>
           <details><summary>Is this like Product Hunt?</summary><p>No votes, no hunters, no review queue. Just the bid.</p></details>
@@ -302,7 +302,7 @@
               <button type="button" class="iconbtn" id="amt-plus" aria-label="Increase by ₹100">+</button>
             </div>
             <div class="quick">
-              <button type="button" class="chip" id="q-list">Just list · ₹199</button>
+              <button type="button" class="chip" id="q-list">Just list · ₹<span data-min-bid>199</span></button>
               <button type="button" class="chip chip--gold" id="q-top">Take #1</button>
             </div>
             <p class="err" id="amt-err" aria-live="polite"></p>

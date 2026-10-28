@@ -8,7 +8,7 @@
 //  * Raising an existing listing only charges the difference between the new total and its current
 //    total on that board.
 
-export const MIN_BID = 199;
+export const MIN_BID = 199; // default; override with MIN_BID_RUPEES
 export const TOP_STEP = 100;
 export const DEFAULT_MAX_BID = 500_000; // ₹5,00,000 per order; override with MAX_BID_RUPEES
 
@@ -18,6 +18,7 @@ export interface QuoteInput {
   top: { id: string; total: number } | null; // current #1 on that board, if any
   listingId: string | null;     // null for a new listing
   maxBid?: number;
+  minBid?: number;
 }
 
 export type Quote =
@@ -27,10 +28,11 @@ export type Quote =
 export function quote(input: QuoteInput): Quote {
   const { bid, currentTotal, top, listingId } = input;
   const maxBid = input.maxBid ?? DEFAULT_MAX_BID;
+  const minBid = input.minBid ?? MIN_BID;
   if (typeof bid !== "number" || !Number.isFinite(bid) || !Number.isInteger(bid)) {
     return { ok: false, error: "not_whole_rupees", message: "Bids are in whole rupees only." };
   }
-  if (bid < MIN_BID) return { ok: false, error: "below_minimum", message: `The minimum total is ₹${MIN_BID}.` };
+  if (bid < minBid) return { ok: false, error: "below_minimum", message: `The minimum total is ₹${minBid}.` };
   if (bid > maxBid) return { ok: false, error: "above_maximum", message: `The maximum total per order is ₹${maxBid}.` };
   if (!Number.isInteger(currentTotal) || currentTotal < 0) {
     return { ok: false, error: "bad_state", message: "Could not read the current total." };

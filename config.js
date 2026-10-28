@@ -13,6 +13,8 @@ window.BOLI_CONFIG = {
   RAZORPAY_KEY_ID: "rzp_test_TtJ7dPa5VPNNVh",
   // Keep false until launch. The edge functions also refuse orders unless their BIDDING_OPEN secret is "true".
   BIDDING_OPEN: true,
+  // Minimum listing price in whole rupees. Must match the MIN_BID_RUPEES backend secret.
+  MIN_BID: 1,
   // Launch moment (ISO 8601 with IST offset). Used by the countdown.
   LAUNCH_AT: "2026-11-16T20:00:00+05:30"
 };
