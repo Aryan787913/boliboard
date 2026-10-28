@@ -3,17 +3,33 @@
 
 const API = "https://api.razorpay.com/v1";
 
-function creds(): { id: string; secret: string } {
+import { admin } from "./db.ts";
+
+// Key id comes from the RAZORPAY_KEY_ID secret. The key secret comes from RAZORPAY_KEY_SECRET when set,
+// otherwise from the private app_secrets table (rzp_test_secret / rzp_live_secret, matched to the key id's mode).
+let cachedSecret: { id: string; secret: string } | null = null;
+
+async function creds(): Promise<{ id: string; secret: string }> {
   const id = Deno.env.get("RAZORPAY_KEY_ID");
-  const secret = Deno.env.get("RAZORPAY_KEY_SECRET");
-  if (!id || !secret) throw new Error("RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET are not set");
-  return { id, secret };
+  if (!id) throw new Error("RAZORPAY_KEY_ID is not set");
+  const envSecret = Deno.env.get("RAZORPAY_KEY_SECRET");
+  if (envSecret) return { id, secret: envSecret };
+  if (cachedSecret && cachedSecret.id === id) return cachedSecret;
+  const name = id.startsWith("rzp_live_") ? "rzp_live_secret" : "rzp_test_secret";
+  const { data, error } = await admin().rpc("get_app_secret", { p_name: name });
+  if (error || typeof data !== "string" || !data) throw new Error(`Razorpay secret ${name} is not set`);
+  cachedSecret = { id, secret: data };
+  return cachedSecret;
 }
 
-export function keyId(): string { return creds().id; }
+export function keyId(): string {
+  const id = Deno.env.get("RAZORPAY_KEY_ID");
+  if (!id) throw new Error("RAZORPAY_KEY_ID is not set");
+  return id;
+}
 
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const { id, secret } = creds();
+  const { id, secret } = await creds();
   const res = await fetch(API + path, {
     method,
     headers: { Authorization: "Basic " + btoa(`${id}:${secret}`), "Content-Type": "application/json" },
@@ -55,6 +71,6 @@ function timingSafeEqual(a: string, b: string): boolean {
 
 /** Razorpay Standard Checkout: signature = HMAC_SHA256(order_id + "|" + payment_id, key_secret), hex. */
 export async function verifySignature(orderId: string, paymentId: string, signature: string, secret?: string): Promise<boolean> {
-  const expected = await hmacSha256Hex(secret ?? creds().secret, `${orderId}|${paymentId}`);
+  const expected = await hmacSha256Hex(secret ?? (await creds()).secret, `${orderId}|${paymentId}`);
   return timingSafeEqual(expected, signature.toLowerCase());
 }
