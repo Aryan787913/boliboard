@@ -3,7 +3,8 @@
 // Body (raise):        { mode: "raise", board: "all"|"today", bid: 4900, email, listing_id }
 // `bid` is the listing's NEW TOTAL on that board, in whole rupees. Only the difference is charged.
 // Returns: { order_id, amount (paise), currency, key_id, listing_id, charge (rupees), bid }
-import { preflight, readJson, json, fail, biddingOpen } from "../_shared/http.ts";
+import { preflight, readJson, json, fail } from "../_shared/http.ts";
+import { biddingOpenNow } from "../_shared/settings.ts";
 import { admin } from "../_shared/db.ts";
 import { quote, DEFAULT_MAX_BID } from "../_shared/pricing.ts";
 import { validateNewListing, EMAIL_RE } from "../_shared/validate.ts";
@@ -15,7 +16,7 @@ Deno.serve(async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
 
-  if (!biddingOpen()) return fail(req, 403, "bidding_closed", "Bidding opens on 16 November 2026, 8 PM IST.");
+  if (!(await biddingOpenNow())) return fail(req, 403, "bidding_closed", "Bidding opens on 16 November 2026, 8 PM IST.");
 
   const body = await readJson(req);
   if (!body) return fail(req, 400, "bad_request", "Send a JSON body.");

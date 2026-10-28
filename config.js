@@ -24,7 +24,6 @@ window.BOLI_CONFIG = {
     PAY_CTA: "Continue to UPI payment",
     HEADLINE: "Pay exactly {amount}",
     EXACT_NOTE: "Pay this exact amount, paise included. The paise tag your payment so it confirms automatically.",
-    APP_BUTTON: "Pay with UPI app",
     QR_HINT: "Scan with any UPI app (GPay, PhonePe, Paytm, BHIM).",
     VPA_LABEL: "Or pay to this UPI ID",
     WAITING: "Waiting for payment… confirms automatically, can take a few minutes. You can close this page and come back.",

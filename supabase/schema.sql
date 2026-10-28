@@ -529,3 +529,184 @@ grant execute on function public.admin_approve_upi(uuid, bigint) to service_role
 
 -- 2026-10-28: GST/company details optional
 alter table public.listings alter column business_details drop not null;
+
+-- =====================================================================
+-- Migration 2026-10-28b · Owner admin (admin-api + admin-site)
+-- Safe to re-run.
+--  * listings.removed is the "hidden" flag (soft remove). Public views
+--    already filter it; public_stats / daily_days now also ignore money on
+--    hidden listings so nothing about them leaks on the public site.
+--  * payments.provider 'manual': owner-recorded comp/offline payments,
+--    credited exactly like UPI/Razorpay (paid row + listings.total_paid).
+--  * app_settings: changeable settings (bidding_open). Edge functions read
+--    it with the BIDDING_OPEN env secret as fallback; public_settings
+--    exposes only bidding_open to the browser.
+--  * admin_audit: one row per mutating admin action.
+--  * admin_rate: per-user request counter for admin-api.
+--  No anon/authenticated access to any of the new tables.
+-- =====================================================================
+alter table public.payments drop constraint if exists payments_provider_check;
+alter table public.payments add  constraint payments_provider_check check (provider in ('upi','razorpay','manual'));
+alter table public.payments drop constraint if exists payments_provider_fields;
+alter table public.payments add  constraint payments_provider_fields check (
+  (provider = 'razorpay' and razorpay_order_id is not null)
+  or (provider = 'upi' and amount_paise is not null and order_code is not null and expires_at is not null)
+  or (provider = 'manual' and amount_paise is not null));
+alter table public.payments drop constraint if exists payments_paid_has_time;
+alter table public.payments add  constraint payments_paid_has_time
+  check (status <> 'paid' or (paid_at is not null and (provider in ('upi','manual') or razorpay_payment_id is not null)));
+alter table public.payments add column if not exists admin_note text check (admin_note is null or char_length(admin_note) <= 200);
+
+create table if not exists public.app_settings (
+  key        text primary key check (key ~ '^[a-z_]{2,40}$'),
+  value      jsonb not null,
+  updated_at timestamptz not null default now(),
+  updated_by text
+);
+alter table public.app_settings enable row level security;
+revoke all on public.app_settings from public, anon, authenticated;
+grant all on public.app_settings to service_role;
+
+create table if not exists public.admin_audit (
+  id         bigint generated always as identity primary key,
+  actor      text not null,
+  action     text not null,
+  target     text,
+  details    jsonb,
+  at         timestamptz not null default now()
+);
+create index if not exists admin_audit_at_idx on public.admin_audit (at desc);
+alter table public.admin_audit enable row level security;
+revoke all on public.admin_audit from public, anon, authenticated;
+revoke all on sequence public.admin_audit_id_seq from public, anon, authenticated;
+grant all on public.admin_audit to service_role;
+grant usage, select on sequence public.admin_audit_id_seq to service_role;
+
+create table if not exists public.admin_rate (
+  user_id uuid not null,
+  bucket  timestamptz not null,
+  hits    integer not null default 0,
+  primary key (user_id, bucket)
+);
+alter table public.admin_rate enable row level security;
+revoke all on public.admin_rate from public, anon, authenticated;
+grant all on public.admin_rate to service_role;
+
+-- true when this request is within p_limit per p_window_sec for the user
+create or replace function public.admin_rate_hit(p_user uuid, p_limit integer, p_window_sec integer)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_bucket timestamptz := to_timestamp(floor(extract(epoch from now()) / p_window_sec) * p_window_sec);
+  v_hits integer;
+begin
+  insert into public.admin_rate (user_id, bucket, hits) values (p_user, v_bucket, 1)
+  on conflict (user_id, bucket) do update set hits = public.admin_rate.hits + 1
+  returning hits into v_hits;
+  delete from public.admin_rate where bucket < now() - interval '1 day';
+  return v_hits <= p_limit;
+end;
+$$;
+
+-- Owner-recorded payment (comp / offline). Same crediting as record_payment / record_upi_payment.
+create or replace function public.record_manual_payment(p_listing_id uuid, p_board text, p_amount integer, p_bid_total integer, p_note text)
+returns table (payment_id uuid, listing_id uuid, amount integer)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_id uuid;
+begin
+  if p_amount is null or p_amount < 1 then raise exception 'amount must be >= 1' using errcode = 'P0001'; end if;
+  perform 1 from public.listings l where l.id = p_listing_id for update;
+  if not found then raise exception 'unknown listing %', p_listing_id using errcode = 'P0002'; end if;
+
+  insert into public.payments (listing_id, board, amount, bid_total, provider, amount_paise, status, paid_at, confirmed_by, admin_note)
+  values (p_listing_id, p_board, p_amount, p_bid_total, 'manual', p_amount * 100, 'paid', now(), 'admin', left(p_note, 200))
+  returning payments.id into v_id;
+
+  update public.listings l
+     set total_paid    = l.total_paid + p_amount,
+         approved      = not l.removed,
+         first_paid_at = coalesce(l.first_paid_at, now())
+   where l.id = p_listing_id;
+
+  return query select v_id, p_listing_id, p_amount;
+end;
+$$;
+
+-- Hide / unhide. Unhide re-approves only listings that have a paid payment.
+create or replace function public.admin_set_hidden(p_listing_id uuid, p_hidden boolean)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  update public.listings l
+     set removed  = p_hidden,
+         approved = case when p_hidden then l.approved
+                         else exists (select 1 from public.payments p where p.listing_id = l.id and p.status = 'paid') end
+   where l.id = p_listing_id;
+  return found;
+end;
+$$;
+
+-- Permanent delete: the listing, its payments (all statuses) and clicks.
+create or replace function public.admin_delete_listing(p_listing_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_name text; v_pay integer; v_sum integer;
+begin
+  select name into v_name from public.listings where id = p_listing_id for update;
+  if not found then return null; end if;
+  select count(*), coalesce(sum(amount) filter (where status = 'paid'), 0) into v_pay, v_sum
+    from public.payments where listing_id = p_listing_id;
+  delete from public.payments where listing_id = p_listing_id;
+  delete from public.listings where id = p_listing_id;
+  return jsonb_build_object('name', v_name, 'payments_deleted', v_pay, 'paid_total_removed', v_sum);
+end;
+$$;
+
+revoke all on function public.admin_rate_hit(uuid, integer, integer) from public, anon, authenticated;
+revoke all on function public.record_manual_payment(uuid, text, integer, integer, text) from public, anon, authenticated;
+revoke all on function public.admin_set_hidden(uuid, boolean) from public, anon, authenticated;
+revoke all on function public.admin_delete_listing(uuid) from public, anon, authenticated;
+grant execute on function public.admin_rate_hit(uuid, integer, integer) to service_role;
+grant execute on function public.record_manual_payment(uuid, text, integer, integer, text) to service_role;
+grant execute on function public.admin_set_hidden(uuid, boolean) to service_role;
+grant execute on function public.admin_delete_listing(uuid) to service_role;
+
+-- Public views: ignore money on hidden listings
+create or replace view public.daily_days with (security_invoker = false) as
+select distinct (p.paid_at at time zone 'Asia/Kolkata')::date as day
+from public.payments p
+join public.listings l on l.id = p.listing_id and l.approved and not l.removed
+where p.status = 'paid'
+  and (p.paid_at at time zone 'Asia/Kolkata')::date < public.ist_today();
+
+create or replace view public.public_stats with (security_invoker = false) as
+select
+  (select count(distinct visitor_hash) from public.visits)::int                         as visitors,
+  (select count(*) from public.visits where day = public.ist_today())::int              as visitors_today,
+  (select coalesce(sum(p.amount), 0) from public.payments p join public.listings l on l.id = p.listing_id and l.approved and not l.removed
+     where p.status = 'paid')::bigint                                                    as revenue,
+  (select count(*) from public.payments p join public.listings l on l.id = p.listing_id and l.approved and not l.removed
+     where p.status = 'paid')::int                                                       as bids,
+  (select count(*) from public.listings where approved and not removed and total_paid > 0)::int as listings,
+  (select coalesce(max(total_paid), 0) from public.listings where approved and not removed)::int as top_total,
+  (select count(*) from public.clicks c join public.listings l on l.id = c.listing_id and l.approved and not l.removed)::int as clicks;
+
+create or replace view public.public_settings with (security_invoker = false) as
+select (select (value #>> '{}')::boolean from public.app_settings where key = 'bidding_open') as bidding_open;
+
+revoke all on public.daily_days, public.public_stats, public.public_settings from public, anon, authenticated;
+grant select on public.daily_days, public.public_stats, public.public_settings to anon, authenticated, service_role;

@@ -25,3 +25,7 @@ verify_jwt = false
 
 [functions.admin-upi]
 verify_jwt = false
+
+# Owner admin API: verifies the Supabase Auth JWT itself (GET /auth/v1/user) + ADMIN_EMAILS allowlist.
+[functions.admin-api]
+verify_jwt = false

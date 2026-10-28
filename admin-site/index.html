@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="referrer" content="no-referrer">
+  <title>Boli admin</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="admin.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <strong>Boli · owner admin</strong>
+    <span id="who" class="muted"></span>
+    <button id="signout" class="ghost" hidden>Sign out</button>
+  </header>
+  <p id="msg" role="status" aria-live="polite"></p>
+
+  <!-- Sign in -->
+  <section id="login" class="card narrow" hidden>
+    <h1>Sign in</h1>
+    <form id="email-form">
+      <label for="email">Owner email</label>
+      <input id="email" type="email" autocomplete="email" required>
+      <button class="primary" type="submit">Send sign-in email</button>
+    </form>
+    <div id="code-step" hidden>
+      <p class="muted">Check Gmail for “Your sign-in link” / “Your Boli admin code”. Either:</p>
+      <form id="code-form">
+        <label for="code">Type the 6-digit code (if the email shows one)</label>
+        <input id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,8}" maxlength="8">
+        <button class="primary" type="submit">Sign in with code</button>
+      </form>
+      <p class="muted">…or click <b>Sign in</b> in the email on this same device. On another device? Long-press the link in the email, copy it and paste it here:</p>
+      <form id="link-form">
+        <input id="link" type="url" placeholder="https://oqdvnivyeaghyeisaylc.supabase.co/auth/v1/verify?token=…">
+        <button type="submit">Sign in with link</button>
+      </form>
+      <button id="restart" class="ghost" type="button">Use a different email</button>
+    </div>
+  </section>
+
+  <!-- App -->
+  <main id="app" hidden>
+    <section class="card">
+      <h2>Dashboard <button id="refresh" class="ghost small" type="button">Refresh</button></h2>
+      <div id="stats" class="stats"></div>
+      <div class="row">
+        <span>Bidding: <b id="bid-state">…</b> <span id="bid-src" class="muted"></span></span>
+        <button id="bid-toggle" type="button">Toggle</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>UPI · pending orders</h2>
+      <div id="upi-pending"></div>
+      <h2>UPI · unmatched notifications</h2>
+      <div id="upi-unmatched"></div>
+    </section>
+
+    <section class="card">
+      <h2>Add listing manually (comp / offline payment)</h2>
+      <form id="add-form" class="grid">
+        <label>Existing listing (raise) <select id="add-existing"><option value="">— New listing —</option></select></label>
+        <label>Board <select id="add-board"><option value="all">All-time</option><option value="today">Today</option></select></label>
+        <label>Amount (₹, whole) <input id="add-amount" type="number" min="1" step="1" required></label>
+        <label class="newonly">Brand name <input id="add-name" maxlength="60"></label>
+        <label class="newonly">Website / @instagram <input id="add-url" maxlength="300"></label>
+        <label class="newonly">Category <select id="add-category"></select></label>
+        <label class="newonly">City <select id="add-city"></select></label>
+        <label class="newonly">Story (≤140) <input id="add-story" maxlength="140"></label>
+        <label class="newonly">Contact email <input id="add-email" type="email" maxlength="254"></label>
+        <label>Note (private) <input id="add-note" maxlength="200" placeholder="e.g. paid cash 28 Oct"></label>
+        <button class="primary" type="submit">Record payment</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Listings</h2>
+      <div id="listings" class="table-wrap"></div>
+    </section>
+
+    <section class="card">
+      <h2>Recent payments</h2>
+      <div id="payments" class="table-wrap"></div>
+    </section>
+
+    <section class="card">
+      <h2>Audit log (last 50)</h2>
+      <div id="audit" class="table-wrap"></div>
+    </section>
+  </main>
+
+  <dialog id="edit-dlg">
+    <form id="edit-form" method="dialog" class="grid">
+      <h2>Edit listing</h2>
+      <label>Name <input id="ed-name" maxlength="60" required></label>
+      <label>URL <input id="ed-url" maxlength="300" required></label>
+      <label>Category <select id="ed-category"></select></label>
+      <label>City <select id="ed-city"></select></label>
+      <label>Story <input id="ed-story" maxlength="140"></label>
+      <div class="row"><button class="primary" value="save">Save</button><button value="cancel" formnovalidate>Cancel</button></div>
+    </form>
+  </dialog>
+</body>
+</html>

@@ -333,7 +333,12 @@
           <p class="eyebrow">UPI payment · order <span id="upi-code">—</span></p>
           <h3 class="upi__amt" id="upi-headline">Pay exactly ₹—</h3>
           <p class="small muted" id="upi-note"></p>
-          <a class="btn btn--accent btn--block" id="upi-app" href="#" rel="nofollow">Pay with UPI app</a>
+          <div class="upi__apps" id="upi-apps" role="group" aria-label="Pay with a UPI app">
+            <a class="upi__appbtn upi__appbtn--gpay" data-upi-app="gpay" href="#" rel="nofollow">Google Pay</a>
+            <a class="upi__appbtn upi__appbtn--phonepe" data-upi-app="phonepe" href="#" rel="nofollow">PhonePe</a>
+            <a class="upi__appbtn upi__appbtn--paytm" data-upi-app="paytm" href="#" rel="nofollow">Paytm</a>
+            <a class="upi__appbtn upi__appbtn--any" data-upi-app="any" href="#" rel="nofollow">Navi / other UPI app</a>
+          </div>
           <details class="upi__qr" id="upi-qr-wrap">
             <summary>Show QR code</summary>
             <div class="upi__qrbox" id="upi-qr" role="img" aria-label="UPI payment QR code"></div>

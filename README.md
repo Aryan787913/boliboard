@@ -82,9 +82,30 @@ kept and switches back on with `PAYMENT_MODE: "razorpay"` in `config.js`.
 - `upi-notify`: webhook for MacroDroid (`x-boli-notify-token` = `NOTIFY_TOKEN`). Ignores debits/requests, parses the
   credited amount, marks the single matching pending order paid and activates the listing. Anything else lands in
   `upi_unmatched`. See `MACRODROID_SETUP.md`.
-- `admin-upi` + `admin.html` (unlinked): list pending orders and unmatched notifications, Approve / Reject. Uses the same token.
+- Checkout shows the QR (exact `upi://pay` link) plus direct buttons for Google Pay (`tez://upi/pay`), PhonePe (`phonepe://pay`),
+  Paytm (`paytmmp://pay`) and Navi/any app (`upi://pay`), all with the same pa/pn/am/cu/tn. Phones see the buttons;
+  desktops see the QR ("Scan with any UPI app").
+- `admin-upi` + the old token-based `admin.html` are **retired** (admin-upi answers 410). Use the owner admin site below.
 - Secrets: `UPI_VPA` (your UPI ID, e.g. `name@okaxis`), `UPI_PAYEE_NAME` (`Boli`), `NOTIFY_TOKEN` (32 hex).
 - SQL: the "Migration 2026-10-28" block at the end of `supabase/schema.sql`.
+
+### 2c. Owner admin site (`admin-site/`, its own Cloudflare Pages project `boli-admin`)
+
+Separate static site, never linked from the public site. Setup and login steps: `ADMIN_SETUP.md`.
+
+- **Auth:** Supabase Auth email sign-in for the owner only. Public sign-ups are disabled (`disable_signup`), the owner
+  user is pre-created. Sign in with the 6-digit code (needs custom SMTP, see ADMIN_SETUP.md) or the emailed link.
+- **`admin-api`** edge function (gateway JWT check off; it verifies the bearer token with `GET /auth/v1/user`, then requires a
+  confirmed email listed in the `ADMIN_EMAILS` secret; 401/403 otherwise). CORS only for `ADMIN_ORIGINS`. 60 requests/min
+  per user (`admin_rate`). Actions: dashboard, listings, hide/unhide (`listings.removed`), delete (type-the-name confirm),
+  edit, add_manual (provider `manual` via `record_manual_payment()`, credited like UPI/Razorpay), upi_list/approve/reject/dismiss,
+  payments, set_bidding, audit. Every write goes to `admin_audit`.
+- **Bidding switch:** `app_settings.bidding_open` (set from the admin site) overrides the `BIDDING_OPEN` secret in
+  create-order / create-upi-order; the public site reads it from the `public_settings` view. No row = secret/config.js value.
+- **Hidden listings** vanish from every public view, including revenue/bids/clicks in `public_stats` and the daily archive.
+- Secrets: `ADMIN_EMAILS`, `ADMIN_ORIGINS`. SQL: "Migration 2026-10-28b" at the end of `supabase/schema.sql`.
+- Security headers in `admin-site/_headers`: strict CSP (self + Supabase URL), `X-Frame-Options: DENY`, noindex, no-referrer.
+  Session lives in sessionStorage only; auto sign-out after 30 minutes idle.
 
 ### 3. Fill `config.js`
 ```js
@@ -113,7 +134,7 @@ python3 -m http.server 8000
 - [ ] Contact & grievance email in the footer (currently `[contact email]`)
 - [ ] Publish full Terms and Privacy Policy (promised before bidding opens)
 - [ ] Razorpay webhook (`payment.captured`) as a backup for payments whose browser closes before verification
-- [ ] Admin view for removals and refunds (today: SQL in the Supabase dashboard)
+- [x] Owner admin site (`admin-site/`, see `ADMIN_SETUP.md`)
 - [ ] Cleanup job for unpaid draft listings (`approved = false and total_paid = 0`)
 
 ## Changelog

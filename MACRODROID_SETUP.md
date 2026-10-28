@@ -83,6 +83,6 @@ https://oqdvnivyeaghyeisaylc.supabase.co/functions/v1/upi-notify
 
 - **Nothing happens:** check step 3 (notification access) and step 4 (battery). Restart the phone once.
 - **Log shows 401:** the token in step 17 is wrong. Copy it again carefully, with no spaces.
-- **Log shows 200 but the order didn't confirm:** the amount didn't match an open order (buyer paid a different amount, or more than 24 hours later). Open the admin page (`/admin.html` on the Boli site), find it under **Unmatched notifications**, pick the right order and tap **Approve**, or approve the order directly under **Pending orders** after checking the money arrived.
+- **Log shows 200 but the order didn't confirm:** the amount didn't match an open order (buyer paid a different amount, or more than 24 hours later). Open the owner admin site (https://boli-admin.pages.dev, see `ADMIN_SETUP.md`), find it under **Unmatched notifications**, pick the right order and tap **Approve**, or approve the order directly under **Pending orders** after checking the money arrived.
 - Money you send ("paid to…", "debited") and payment requests are ignored on purpose.
 - Notification texts with line breaks or quotes are handled; if one ever fails to confirm, approve it from the admin page.

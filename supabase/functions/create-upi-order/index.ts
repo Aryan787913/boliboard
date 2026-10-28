@@ -9,7 +9,8 @@
 // Returns: { order_id, order_code, amount_paise, amount ("1.07"), vpa, payee_name, upi_link, expires_at,
 //            listing_id, charge, bid, email }
 // Errors: 503 upi_not_configured when the UPI_VPA secret is missing.
-import { preflight, readJson, json, fail, biddingOpen } from "../_shared/http.ts";
+import { preflight, readJson, json, fail } from "../_shared/http.ts";
+import { biddingOpenNow } from "../_shared/settings.ts";
 import { admin } from "../_shared/db.ts";
 import { prepareBid } from "../_shared/bid.ts";
 import { VPA_RE, paiseToString, upiLink } from "../_shared/upi.ts";
@@ -22,7 +23,7 @@ Deno.serve(async (req) => {
   const payee = (Deno.env.get("UPI_PAYEE_NAME") ?? "Boli").trim() || "Boli";
   if (!vpa || !VPA_RE.test(vpa)) return fail(req, 503, "upi_not_configured", "UPI not configured.");
 
-  if (!biddingOpen()) return fail(req, 403, "bidding_closed", "Bidding opens on 16 November 2026, 8 PM IST.");
+  if (!(await biddingOpenNow())) return fail(req, 403, "bidding_closed", "Bidding opens on 16 November 2026, 8 PM IST.");
 
   const body = await readJson(req);
   if (!body) return fail(req, 400, "bad_request", "Send a JSON body.");

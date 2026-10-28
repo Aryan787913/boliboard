@@ -776,6 +776,7 @@
     $("#claim-title").textContent = "Claim your rank";
   }
   function stopUpiPoll() { if (upiTimer) { clearInterval(upiTimer); upiTimer = null; } }
+  var UPI_APP_SCHEMES = { gpay: "tez://upi/pay?", phonepe: "phonepe://pay?", paytm: "paytmmp://pay?", any: "upi://pay?" };
   function drawQr(link) {
     var box = $("#upi-qr");
     if (!window.qrcode) { box.textContent = "QR unavailable. Use the UPI ID below."; return; }
@@ -789,7 +790,7 @@
     if (state === "pending" && o.expires && Date.now() > o.expires) state = "expired";
     st.setAttribute("data-state", state);
     var paying = state === "pending";
-    $("#upi-app").hidden = !paying;
+    $("#upi-apps").hidden = !paying;
     $("#upi-qr-wrap").hidden = !paying;
     $(".upi__vpa").hidden = !paying;
     $("#upi-note").hidden = !paying;
@@ -834,14 +835,17 @@
     $("#upi-code").textContent = o.code || "—";
     $("#upi-headline").textContent = fill(UPI.HEADLINE || "Pay exactly {amount}", o);
     $("#upi-note").textContent = UPI.EXACT_NOTE || "";
-    var app = $("#upi-app");
-    app.textContent = UPI.APP_BUTTON || "Pay with UPI app";
-    app.setAttribute("href", o.link);
-    $("#upi-qr-hint").textContent = UPI.QR_HINT || "";
+    // Direct app buttons: same pa/pn/am/cu/tn params as the QR's upi://pay link, different app schemes.
+    var params = String(o.link || "").split("?")[1] || "";
+    $$("#upi-apps [data-upi-app]").forEach(function (a) {
+      var scheme = UPI_APP_SCHEMES[a.getAttribute("data-upi-app")] || "upi://pay?";
+      a.setAttribute("href", scheme + params);
+    });
+    var touch = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    $("#upi-qr-hint").textContent = touch ? (UPI.QR_HINT || "Scan with any UPI app.") : "Scan with any UPI app";
     $("#upi-vpa-label").textContent = UPI.VPA_LABEL || "Or pay to this UPI ID";
     $("#upi-vpa").textContent = o.vpa || "—";
     $("#upi-new").textContent = UPI.NEW_BID || "Start a new bid";
-    var touch = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
     $("#upi-pay").classList.toggle("upi--touch", !!touch);
     $("#upi-qr-wrap").open = !touch;
     drawQr(o.link);
@@ -929,7 +933,7 @@
   function refreshLive() {
     if (!sb || doc.hidden) return;
     loadBoard({ animate: true, refreshDays: state.board === "daily" });
-    loadStats(); loadFeed();
+    loadStats(); loadFeed(); loadSettings();
     if (state.board !== "all") fetchLive("all").then(function (rows) { if (rows.length) { state.cache.all = rows; renderHero(rows[0]); } }).catch(function () {});
   }
   function connect() {
@@ -941,12 +945,24 @@
       sb = null;
     });
   }
+  // Owner can open/close bidding from the admin site (app_settings.bidding_open, exposed via public_settings).
+  // null means "no admin setting": keep config.js BIDDING_OPEN.
+  function loadSettings() {
+    if (!sb) return Promise.resolve();
+    return sb.from("public_settings").select("bidding_open").maybeSingle().then(function (res) {
+      var v = res && res.data ? res.data.bidding_open : null;
+      if (typeof v !== "boolean" || v === C.BIDDING_OPEN) return;
+      C.BIDDING_OPEN = v;
+      $("#status-line").textContent = v ? "Live · bidding is open" : "Bidding is closed for now";
+      syncPayButton();
+    }, function () {});
+  }
   function start() {
     initTheme(); initCountdown(); initFilters(); initClicks(); initWaitlist(); initClaim(); initNav();
     resumeUpi(); // a UPI payment in progress (stored on this device) reopens straight away
     connect().then(function () {
       loadBoard({ animate: false });
-      loadStats(); loadFeed(); trackVisit();
+      loadStats(); loadFeed(); trackVisit(); loadSettings();
       if (sb) {
         setInterval(refreshLive, 15000);
         doc.addEventListener("visibilitychange", function () { if (!doc.hidden) refreshLive(); });
