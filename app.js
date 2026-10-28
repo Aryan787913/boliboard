@@ -257,6 +257,8 @@
 
   function renderHero(top) {
     var el = $("#hero-top");
+    var oldAmt = $("[data-amt]", el), prevHero = el.getAttribute("data-top");
+    el.setAttribute("data-top", top ? top.id : "");
     if (!top) {
       el.innerHTML = '<div class="topcard__in topcard--open"><p class="crown">#1 · All-time</p><h3 class="topcard__name">The #1 spot is open.</h3>' +
         '<p class="muted">The first paid listing takes it. ₹' + MIN_BID + ' is all it costs to list.</p>' +
@@ -274,6 +276,9 @@
       '<div class="topcard__foot">' + codeChip(top) + visit(top, "btn btn--ghost btn--sm") + "</div>" +
       '<button class="btn btn--accent btn--block" type="button" data-open-claim="top">Take #1 for ' + inr(nextTopPrice("all")) + "</button>" +
       "</article>";
+    // value changed: tick from the old amount; a new #1 gets a glow
+    if (oldAmt) tickTo($("[data-amt]", el), +oldAmt.getAttribute("data-amt"), top.total);
+    if (prevHero && prevHero !== String(top.id) && window.BoliMotion) window.BoliMotion.pulse($(".topcard__in", el), true);
   }
 
   function podiumCard(r, i) {
@@ -306,6 +311,7 @@
     });
 
     var list = filtered(), top3 = list.slice(0, 3), rest = list.slice(3);
+    var prevTop = state.topKey; state.topKey = top3[0] ? String(top3[0].id) : null;
     $("#podium").innerHTML = top3.map(podiumCard).join("");
     $("#rows").innerHTML = rest.map(function (r, k) { return rowItem(r, k + 3); }).join("");
     $("#podium").hidden = !top3.length;
@@ -353,7 +359,8 @@
         if (b) {
           var now = el.getBoundingClientRect(), dx = b.rect.left - now.left, dy = b.rect.top - now.top;
           if (Math.abs(dx) > 1 || Math.abs(dy) > 1) el.animate([{ transform: "translate(" + dx + "px," + dy + "px)" }, { transform: "none" }], { duration: 520, easing: EASE });
-          if (state.deltas[k] && state.deltas[k] !== "new" && state.deltas[k] > 0) el.animate([{ boxShadow: "0 0 0 2px var(--up)" }, { boxShadow: "0 0 0 0 transparent" }], { duration: 1400, easing: "ease-out" });
+          var newTop = prevTop && k === state.topKey && k !== prevTop;
+          if (window.BoliMotion && (newTop || (state.deltas[k] && state.deltas[k] !== "new" && state.deltas[k] > 0))) window.BoliMotion.pulse(el, newTop);
         } else {
           el.animate([{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], { duration: 380, easing: EASE, fill: "backwards" });
         }
