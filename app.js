@@ -109,8 +109,9 @@
 
   /* ---------- theme ---------- */
   function initTheme() {
-    var btn = $("#theme-btn"), mq = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : { matches: true };
-    function cur() { var t = root.getAttribute("data-theme"); return t === "light" || t === "dark" ? t : (mq.matches ? "dark" : "light"); }
+    // CSS is dark unless the system asks for light, so mirror exactly that here
+    var btn = $("#theme-btn"), mq = window.matchMedia ? window.matchMedia("(prefers-color-scheme: light)") : { matches: false };
+    function cur() { var t = root.getAttribute("data-theme"); return t === "light" || t === "dark" ? t : (mq.matches ? "light" : "dark"); }
     function sync() { btn.setAttribute("aria-label", cur() === "dark" ? "Switch to light theme" : "Switch to dark theme"); }
     btn.addEventListener("click", function () {
       var next = cur() === "dark" ? "light" : "dark";
@@ -427,7 +428,7 @@
       setStat("revenue", 0);
       setStat("listings", 0, num);
       setStat("nextTop", MIN_BID);
-      $("#stats-note").textContent = "Pre-launch: nothing has been sold yet. Visitor counts start once the live database is connected.";
+      $("#stats-note").textContent = "Real numbers, not the sample board: nothing has been sold yet, so revenue and listings are zero and ₹199 takes #1. Visitor counts start once the live database is connected.";
       return Promise.resolve();
     }
     return sb.from("public_stats").select("*").maybeSingle().then(function (res) {
@@ -438,7 +439,7 @@
       setStat("revenue", Number(s.revenue) || 0);
       setStat("listings", Number(s.listings) || 0, num);
       setStat("nextTop", s.top_total ? Number(s.top_total) + TOP_STEP : MIN_BID);
-      $("#stats-note").textContent = "Live from the database: unique visitors, rupees paid, approved listings. " + (Date.now() < LAUNCH ? "Zero until launch." : "");
+      $("#stats-note").textContent = "Live from the database (unique visitors, rupees paid, live listings), never from the sample board." + (Date.now() < LAUNCH ? " Zero until launch." : "");
     }).catch(function (err) {
       if (window.console) console.warn("Boli: stats unavailable.", err && err.message);
       ["visitors", "revenue", "listings"].forEach(function (k) { setStat(k, null); });

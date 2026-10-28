@@ -71,7 +71,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 76px; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 92px; }
 body {
   margin: 0;
   font: 16px/1.55 var(--font);
@@ -223,7 +223,7 @@ main > section.hero { margin-top: 0; }
 .code:hover .code__val { background: var(--surface-2); }
 .visit { display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line-2); text-decoration: none; font-size: 0.85rem; font-weight: 700; }
 .visit:hover { background: var(--surface-2); }
-.is-disabled { opacity: 0.5; pointer-events: none; }
+.is-disabled { opacity: 0.75; pointer-events: none; border-style: dashed; }
 .delta { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .delta--up { color: var(--up); background: color-mix(in srgb, var(--up) 14%, transparent); }
 .delta--down { color: var(--down); background: color-mix(in srgb, var(--down) 14%, transparent); }
@@ -380,7 +380,9 @@ main > section.wrap[aria-label="Public stats"] { margin-top: 48px; }
 
 /* ---------- larger screens ---------- */
 @media (min-width: 560px) {
-  .waitlist { grid-template-columns: 1.3fr 1fr auto; }
+  .waitlist { grid-template-columns: 1fr auto; }
+  .waitlist > input[type="email"] { grid-column: 1 / -1; }
+  .waitlist--compact > input[type="email"] { grid-column: auto; }
   .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .row { grid-template-columns: 32px 42px minmax(0, 1fr) auto; align-items: center; }
   .row__rank { padding-top: 0; }
@@ -390,8 +392,10 @@ main > section.wrap[aria-label="Public stats"] { margin-top: 48px; }
 }
 @media (min-width: 760px) {
   .topnav { display: flex; }
-  .podium { grid-template-columns: 1fr 1.15fr 1fr; align-items: end; }
+  .podium { grid-template-columns: 1fr 1.15fr 1fr; align-items: start; }
   .pod--gold { order: 2; padding: 24px; }
+  .pod--silver { margin-top: 28px; }
+  .pod--bronze { margin-top: 48px; }
   .pod--gold .pod__name { font-size: 1.45rem; }
   .pod--silver { order: 1; }
   .pod--bronze { order: 3; }
