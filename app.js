@@ -112,6 +112,17 @@
     })(performance.now());
   }
 
+  /* ---------- #1 card helpers (styled in styles.css, animated by top1.js) ---------- */
+  var ICON_CROWN = '<svg class="t1-crown" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3.2 8.6l4.3 3.3 4-6.1a.6.6 0 0 1 1 0l4 6.1 4.3-3.3a.6.6 0 0 1 1 .6l-1.9 8.6a1 1 0 0 1-1 .8H5.1a1 1 0 0 1-1-.8L2.2 9.2a.6.6 0 0 1 1-.6zM5.5 19.6h13a.7.7 0 0 1 0 1.4h-13a.7.7 0 0 1 0-1.4z"/></svg>';
+  var ICON_ARROW = '<svg class="t1-arrow" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M3 8h9.5M8.5 4l4 4-4 4"/></svg>';
+  // negative delay keeps the ring/sheen phase continuous when a card is re-rendered (all periods divide 63 s)
+  function t1Phase() { return "--t1d:-" + (Date.now() % 63000) + "ms"; }
+  function t1Fx() { return '<span class="t1-fx" aria-hidden="true"><span class="t1-ring"><i></i></span><span class="t1-sheen"></span></span>'; }
+  function emitTop(r, board) {
+    if (!r) return;
+    try { doc.dispatchEvent(new CustomEvent("boli:newtop", { detail: { id: String(r.id), name: r.name, board: board } })); } catch (e) { /* old browser: no takeover moment */ }
+  }
+
   /* ---------- theme ---------- */
   function initTheme() {
     // CSS is dark unless the system asks for light, so mirror exactly that here
@@ -220,6 +231,9 @@
     if (state.board === "all") renderHero(source === "sample" && reason === "empty" ? null : rows[0]);
     else if (!state.cache.all) ensureBoard("all").then(function () { renderHero(sb ? (state.cache.all || [])[0] : sampleBoard("all")[0]); });
     render(animate !== false);
+    // a new #1 on the view already on screen (live refresh or demo bid), not a tab/day switch
+    if (prev && rows[0] && prev[rows[0].id] !== 1 && state.lastView === key) emitTop(rows[0], state.board);
+    state.lastView = key;
   }
 
   /* ---------- rendering ---------- */
@@ -265,32 +279,40 @@
         '<button class="btn btn--accent" type="button" data-open-claim="top">Claim #1 for ₹' + MIN_BID + '</button></div>';
       return;
     }
-    el.innerHTML = '<article class="topcard__in" data-key="hero">' +
+    el.innerHTML = '<article class="topcard__in is-top1" data-key="hero" style="' + t1Phase() + '">' + t1Fx() +
       (top.sample ? '<span class="ribbon">Sample data</span>' : "") +
-      '<div class="topcard__head"><p class="crown"><span aria-hidden="true">♛</span> #1 · All-time</p>' + PAID + "</div>" +
+      '<div class="topcard__head"><p class="crown">' + ICON_CROWN + ' #1 · All-time</p>' + PAID + "</div>" +
       '<div class="topcard__id">' + avatar(top, "xl") + '<div><h3 class="topcard__name">' + esc(top.name) + "</h3>" +
       (top.founder_name ? '<p class="muted">Founder: ' + esc(top.founder_name) + "</p>" : "") + "</div></div>" +
       (top.story ? '<p class="topcard__story">' + esc(top.story) + "</p>" : "") +
       '<div class="topcard__amt"><span class="label">Total paid</span><span class="amt amt--xl" data-amt="' + top.total + '">' + inr(top.total) + "</span></div>" +
       '<p class="topcard__meta">' + meta(top) + "</p>" +
       '<div class="topcard__foot">' + codeChip(top) + visit(top, "btn btn--ghost btn--sm") + "</div>" +
-      '<button class="btn btn--accent btn--block" type="button" data-open-claim="top">Take #1 for ' + inr(nextTopPrice("all")) + "</button>" +
+      '<button class="btn btn--gold btn--block t1-cta" type="button" data-open-claim="top" data-claim-board="all">Beat this for ' + inr(nextTopPrice("all")) + ICON_ARROW + "</button>" +
       "</article>";
     // value changed: tick from the old amount; a new #1 gets a glow
     if (oldAmt) tickTo($("[data-amt]", el), +oldAmt.getAttribute("data-amt"), top.total);
     if (prevHero && prevHero !== String(top.id) && window.BoliMotion) window.BoliMotion.pulse($(".topcard__in", el), true);
   }
 
+  function topCta(r) {
+    // same price the claim drawer's "Take #1" computes for this board; daily archives can't be bid on
+    if (state.board === "daily") return "";
+    var t = topOf(state.board), label = t && String(t.id) === String(r.id) ? "Beat this for " : "Take #1 for ";
+    return '<button class="btn btn--gold btn--sm btn--block t1-cta" type="button" data-open-claim="top" data-claim-board="' + state.board + '">' +
+      label + inr(nextTopPrice(state.board)) + ICON_ARROW + "</button>";
+  }
   function podiumCard(r, i) {
-    var cls = ["gold", "silver", "bronze"][i];
-    return '<li class="pod pod--' + cls + '" data-key="' + esc(r.id) + '">' +
-      '<div class="pod__rank"><span class="medal">#' + (i + 1) + "</span>" + deltaBadge(r.id) + "</div>" +
+    var cls = ["gold", "silver", "bronze"][i], top = i === 0;
+    return '<li class="pod pod--' + cls + (top ? " is-top1" : "") + '" data-key="' + esc(r.id) + '"' + (top ? ' style="' + t1Phase() + '"' : "") + ">" +
+      (top ? t1Fx() : "") +
+      '<div class="pod__rank">' + (top ? '<span class="medal medal--top">' + ICON_CROWN + "#1</span>" : '<span class="medal">#' + (i + 1) + "</span>") + deltaBadge(r.id) + "</div>" +
       '<div class="pod__id">' + avatar(r, "lg") + '<div class="pod__names"><h3 class="pod__name">' + esc(r.name) + "</h3>" +
       (r.founder_name ? '<p class="muted small">Founder: ' + esc(r.founder_name) + "</p>" : "") + "</div></div>" +
       (r.story ? '<p class="pod__story">' + esc(r.story) + "</p>" : "") +
       '<p class="amt amt--lg" data-amt="' + r.total + '">' + inr(r.total) + "</p>" +
       '<p class="small muted">' + meta(r) + "</p>" +
-      '<div class="pod__foot">' + PAID + codeChip(r) + visit(r) + "</div></li>";
+      '<div class="pod__foot">' + PAID + codeChip(r) + visit(r) + "</div>" + (top ? topCta(r) : "") + "</li>";
   }
   function rowItem(r, i) {
     return '<li class="row" data-key="' + esc(r.id) + '">' +
@@ -654,6 +676,8 @@
     doc.body.classList.add("no-scroll");
     var pending = PAYMENT_MODE === "upi" && upiLoad();
     if (pending) { showUpi(pending); return; }
+    var pre = opener && opener.getAttribute && opener.getAttribute("data-claim-board");
+    if (pre) { var rb = form.querySelector('input[name="board"][value="' + pre + '"]'); if (rb) rb.checked = true; }
     showForm();
     $("#claim-msg").textContent = "";
     syncPayButton();
@@ -941,7 +965,12 @@
     if (!sb || doc.hidden) return;
     loadBoard({ animate: true, refreshDays: state.board === "daily" });
     loadStats(); loadFeed(); loadSettings();
-    if (state.board !== "all") fetchLive("all").then(function (rows) { if (rows.length) { state.cache.all = rows; renderHero(rows[0]); } }).catch(function () {});
+    if (state.board !== "all") fetchLive("all").then(function (rows) {
+      if (!rows.length) return;
+      var old = topOf("all");
+      state.cache.all = rows; renderHero(rows[0]);
+      if (old && String(old.id) !== String(rows[0].id)) emitTop(rows[0], "all");
+    }).catch(function () {});
   }
   function connect() {
     if (!configured) return Promise.resolve();

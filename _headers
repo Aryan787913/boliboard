@@ -15,3 +15,6 @@
 
 /motion.js
   Cache-Control: no-cache
+
+/top1.js
+  Cache-Control: no-cache
