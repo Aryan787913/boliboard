@@ -60,7 +60,7 @@ create table if not exists public.listings (
   rivalry_opt_in   boolean     not null default false,
   -- private fields (never granted to anon)
   contact_email    text        not null check (char_length(contact_email) <= 254 and contact_email ~* '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]{2,}$'),
-  business_details text        not null check (char_length(business_details) between 5 and 200),
+  business_details text        check (business_details is null or char_length(business_details) <= 200),
   -- money (whole rupees)
   total_paid       integer     not null default 0 check (total_paid >= 0),
   approved         boolean     not null default false,  -- becomes true on first verified payment
@@ -526,3 +526,6 @@ grant execute on function public.reserve_upi_payment(uuid, text, integer, intege
 grant execute on function public.record_upi_payment(uuid, text, text, text, text) to service_role;
 grant execute on function public.upi_match_notification(integer, text, text, text, text) to service_role;
 grant execute on function public.admin_approve_upi(uuid, bigint) to service_role;
+
+-- 2026-10-28: GST/company details optional
+alter table public.listings alter column business_details drop not null;

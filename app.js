@@ -676,7 +676,6 @@
     if (!fieldVal("url")) errs.push("website or Instagram handle");
     if (!fieldVal("category")) errs.push("category");
     if (!fieldVal("city")) errs.push("city");
-    if (fieldVal("business").length < 5) errs.push("GST or company details");
     var code = fieldVal("code").toUpperCase();
     if (code && !/^[A-Z0-9]{3,20}$/.test(code)) errs.push("discount code (3 to 20 letters or numbers)");
     if (fieldVal("founder") && !form.elements.consent.checked) errs.push("founder consent (or leave the founder name empty)");

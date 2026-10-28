@@ -77,7 +77,6 @@ export function validateNewListing(input: unknown, email: unknown): { listing?: 
   if (founder_name && !founder_consent) errors.push("Founder names are shown only with the founder's consent. Tick the consent box or leave the name empty.");
   if (!founder_consent) founder_name = null;
   const business_details = str(o.business_details, 200);
-  if (!business_details || business_details.length < 5) errors.push("GST number or company details are required.");
   const contact_email = str(email, 254)?.toLowerCase() ?? null;
   if (!contact_email || !EMAIL_RE.test(contact_email)) errors.push("A valid contact email is required.");
   if (errors.length) return { errors };
@@ -86,7 +85,7 @@ export function validateNewListing(input: unknown, email: unknown): { listing?: 
     listing: {
       name: name!, url: url!, category: category!, city: city!, story, offer, discount_code: code,
       founder_name, founder_consent, rivalry_opt_in: o.rivalry_opt_in === true,
-      business_details: business_details!, contact_email: contact_email!,
+      business_details: business_details || "", contact_email: contact_email!,
     },
   };
 }
